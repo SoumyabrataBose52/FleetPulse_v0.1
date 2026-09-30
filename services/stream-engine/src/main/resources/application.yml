@@ -1,0 +1,58 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: stream-engine
+  threads:
+    virtual:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: stream-engine-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 5000
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      acks: all
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+fleetpulse:
+  stream:
+    topics:
+      input: ${KAFKA_TOPIC_INPUT:telemetry.clean.v1}
+      trips: ${KAFKA_TOPIC_TRIPS:events.trip.v1}
+      idle: ${KAFKA_TOPIC_IDLE:events.idle.v1}
+      charging: ${KAFKA_TOPIC_CHARGING:events.charging.v1}
+      alerts: ${KAFKA_TOPIC_ALERTS:events.alerts.v1}
+    thresholds:
+      moving-speed-kmh: 5.0
+      stopped-speed-kmh: 1.0
+      anchor-radius-m: 30.0
+      trip-start-displacement-m: 50.0
+      trip-close-stationary-s: 300
+      min-idle-s: 120
+      allowed-idle-min: 10
+      idle-fuel-burn-lph: 1.5
+      fuel-price-per-l: 1.45
+      electricity-price-per-kwh: 0.22
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always

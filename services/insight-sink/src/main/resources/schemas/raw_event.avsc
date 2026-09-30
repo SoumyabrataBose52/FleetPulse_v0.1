@@ -1,0 +1,52 @@
+{
+  "type": "record",
+  "name": "RawTelemetryEvent",
+  "namespace": "com.fleetpulse.telemetry.raw",
+  "doc": "FleetPulse raw telemetry event wrapper for raw.telemetry topic (§4.2, §4.3)",
+  "fields": [
+    {
+      "name": "raw_device_id",
+      "type": "string",
+      "doc": "Raw device ID or VIN string directly from OEM payload"
+    },
+    {
+      "name": "oem",
+      "type": "string",
+      "doc": "Source OEM identifier: A, B, C, D, E"
+    },
+    {
+      "name": "schema_ver",
+      "type": "int",
+      "default": 1,
+      "doc": "Reported or inferred schema version"
+    },
+    {
+      "name": "recv_ts_ms",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Gateway ingest timestamp in epoch milliseconds"
+    },
+    {
+      "name": "content_type",
+      "type": "string",
+      "default": "application/json",
+      "doc": "Content format: application/json, text/plain, application/octet-stream"
+    },
+    {
+      "name": "payload_bytes",
+      "type": "bytes",
+      "doc": "Raw unmodified payload bytes received from OEM"
+    },
+    {
+      "name": "headers",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Ingest metadata headers (e.g. traceparent, client-ip, tls-cn)"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: insight-sink-test
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: insight-sink-test-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+fleetpulse:
+  sink:
+    topics:
+      trips: events.trip.v1
+      idle: events.idle.v1
+      charging: events.charging.v1
+      safety: events.safety.v1
+      alerts: events.alerts.v1

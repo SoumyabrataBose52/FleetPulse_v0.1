@@ -1,0 +1,32 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: stream-engine-test
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: stream-engine-test-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+fleetpulse:
+  stream:
+    topics:
+      input: telemetry.clean.v1
+      trips: events.trip.v1
+      idle: events.idle.v1
+      charging: events.charging.v1
+      alerts: events.alerts.v1
+    thresholds:
+      moving-speed-kmh: 5.0
+      stopped-speed-kmh: 1.0
+      anchor-radius-m: 30.0
+      trip-start-displacement-m: 50.0
+      trip-close-stationary-s: 300
+      min-idle-s: 120
+      allowed-idle-min: 10
+      idle-fuel-burn-lph: 1.5
+      fuel-price-per-l: 1.45
+      electricity-price-per-kwh: 0.22

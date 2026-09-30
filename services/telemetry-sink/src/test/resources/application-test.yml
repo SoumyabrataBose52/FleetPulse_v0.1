@@ -1,0 +1,28 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: telemetry-sink-test
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: telemetry-sink-test-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+clickhouse:
+  url: http://localhost:8123
+  database: fleetpulse
+  table: telemetry
+  user: fleetpulse
+  password: fleetpulse_dev
+  dedup-enabled: true
+
+fleetpulse:
+  sink:
+    batch-max-size: 100
+    flush-timeout-ms: 100
+    topics:
+      clean: telemetry.clean.v1
+      late: telemetry.late.v1

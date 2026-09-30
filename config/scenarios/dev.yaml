@@ -1,0 +1,41 @@
+## Simulator scenario for local dev (1K vehicles)
+seed: 42
+region:
+  center: [13.0827, 80.2707]  # Chennai, India (any metro works)
+  size_km: 40
+vehicles: 100000
+tenants: 40
+time:
+  mode: realtime
+  speedup: 1
+  start_local: "06:00"
+  tz_offset_min: 330
+transport:
+  kind: http
+  endpoint: "http://gateway:8080"
+  batch: 100
+rates:
+  driving_hz: 1
+  parked_s: 30
+  charging_s: 5
+burst:
+  at: "06:30"
+  factor: 3
+  duration_s: 60
+chaos:
+  dup: 0.015
+  ooo: 0.03
+  offline_pct_hour: 0.02
+  malformed: 0.0005
+scenarios:
+  tow_per_day: 2
+  geofence_breach_rate: 0.005
+  range_risk_rate: 0.002
+schema_drift:
+  oem: E
+  to_version: 2
+  pct: 0.4
+  at: "09:00"
+ledger:
+  enabled: true
+  path: "s3://fleetpulse-test/ledger/"

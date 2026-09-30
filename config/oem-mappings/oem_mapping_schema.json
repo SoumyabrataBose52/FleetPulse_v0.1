@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OEMMappingConfig",
+  "description": "FleetPulse declarative OEM-to-canonical mapping specification (§5.2)",
+  "type": "object",
+  "required": ["oem", "schema_ver", "format", "fields"],
+  "properties": {
+    "oem": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E"]
+    },
+    "schema_ver": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "format": {
+      "type": "string",
+      "enum": ["json", "delimited", "signal_list"]
+    },
+    "delimiter": {
+      "type": "string",
+      "description": "Required when format is delimited (e.g. '|')"
+    },
+    "description": {
+      "type": "string"
+    },
+    "vin_field": {
+      "type": "string",
+      "description": "Source path or index containing the raw VIN / device ID"
+    },
+    "fields": {
+      "type": "object",
+      "description": "Mapping rules per canonical field name",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["source"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "JSONPath (e.g. 'position.latitude'), array index (e.g. '3'), or signal name (e.g. 'SPD')"
+          },
+          "required": {
+            "type": "boolean",
+            "default": false
+          },
+          "default": {
+            "description": "Default value if field is missing or null"
+          },
+          "transform": {
+            "type": "string",
+            "enum": [
+              "direct",
+              "scale",
+              "iso8601_to_ms",
+              "epoch_s_to_ms",
+              "enum_map",
+              "split_list",
+              "array_index",
+              "negative_to_charge_kw",
+              "negative_to_charge_state"
+            ],
+            "default": "direct"
+          },
+          "factor": {
+            "type": "number",
+            "description": "Multiplication factor for scale transform"
+          },
+          "offset": {
+            "type": "number",
+            "default": 0.0,
+            "description": "Addition offset for scale transform"
+          },
+          "mapping": {
+            "type": "object",
+            "description": "Key-value dictionary for enum_map transform"
+          },
+          "separator": {
+            "type": "string",
+            "default": ";",
+            "description": "Delimiter for split_list transform"
+          },
+          "index": {
+            "type": "integer",
+            "description": "Element index for array_index transform"
+          }
+        }
+      }
+    }
+  }
+}

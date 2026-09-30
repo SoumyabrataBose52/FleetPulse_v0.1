@@ -1,0 +1,1841 @@
+openapi: 3.1.0
+info:
+  title: FleetPulse API
+  version: 1.0.0
+  description: "Connected Vehicle Cost & EV Efficiency Intelligence Platform REST\
+    \ API (\xC2\xA79).\nProvides real-time tracking, analytical rollups, EV smart\
+    \ charging plans,\nsafety scores, geofence asset monitoring, privacy-safe data\
+    \ sharing, and administrative controls.\n"
+servers:
+- url: /
+  description: Current environment
+security:
+- OAuth2Bearer: []
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      security: []
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /readyz:
+    get:
+      summary: Readiness probe
+      security: []
+      responses:
+        '200':
+          description: Service is ready to receive traffic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Dependencies not reachable
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      security: []
+      responses:
+        '200':
+          description: Prometheus exposition format text
+          content:
+            text/plain:
+              schema:
+                type: string
+  /v1/ingest/batch:
+    post:
+      summary: Ingest batch of raw telematics payloads (Gateway)
+      description: "High-throughput HTTP NDJSON batch ingest endpoint (\xC2\xA74.4,\
+        \ \xC2\xA79)."
+      security:
+      - mTLS: []
+      - OAuth2Bearer: []
+      parameters:
+      - name: X-OEM
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+          - A
+          - B
+          - C
+          - D
+          - E
+      - name: Content-Type
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+          - application/x-ndjson
+          - application/json
+          - text/plain
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema:
+              type: string
+              description: Up to 500 newline-delimited JSON or text payloads
+      responses:
+        '202':
+          description: Batch accepted for ingestion
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted_count:
+                    type: integer
+                  rejected_count:
+                    type: integer
+        '400':
+          description: Invalid batch format or headers
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '429':
+          description: Back-pressure queue saturated (Retry-After header present)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /v1/vehicles:
+    get:
+      summary: List vehicles with keyset pagination
+      parameters:
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - MAINTENANCE
+      - name: fleet_id
+        in: query
+        schema:
+          type: integer
+      - name: powertrain
+        in: query
+        schema:
+          type: string
+          enum:
+          - ICE_PETROL
+          - ICE_DIESEL
+          - HYBRID
+          - EV
+      responses:
+        '200':
+          description: Paginated vehicle list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vehicle'
+                  next_cursor:
+                    type: string
+                    nullable: true
+  /v1/vehicles/{pid}:
+    get:
+      summary: Get vehicle details
+      parameters:
+      - $ref: '#/components/parameters/VehiclePidParam'
+      responses:
+        '200':
+          description: Vehicle details with model specifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+          description: Response for status 404
+  /v1/vehicles/{pid}/live:
+    get:
+      summary: Get real-time live telemetry state from Redis
+      parameters:
+      - $ref: '#/components/parameters/VehiclePidParam'
+      responses:
+        '200':
+          description: Sub-second live state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveState'
+        '404':
+          $ref: '#/components/responses/NotFound'
+          description: Response for status 404
+  /v1/vehicles/{pid}/trace:
+    get:
+      summary: Get historical telemetry breadcrumbs from ClickHouse
+      parameters:
+      - $ref: '#/components/parameters/VehiclePidParam'
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: integer
+          description: Start epoch ms
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: integer
+          description: End epoch ms
+      - name: resolution
+        in: query
+        schema:
+          type: string
+          enum:
+          - 1s
+          - 10s
+          - 1m
+          default: 10s
+      responses:
+        '200':
+          description: Time-ordered trace points
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TracePoint'
+  /v1/map/clusters:
+    get:
+      summary: Get geohash clusters for viewport rendering
+      parameters:
+      - name: bbox
+        in: query
+        required: true
+        description: min_lon,min_lat,max_lon,max_lat
+        schema:
+          type: string
+      - name: zoom
+        in: query
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 20
+      responses:
+        '200':
+          description: Geohash clusters with vehicle counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MapCluster'
+  /v1/map/vehicles:
+    get:
+      summary: Get individual vehicle markers within viewport bounding box
+      parameters:
+      - name: bbox
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 500
+      responses:
+        '200':
+          description: Vehicle markers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VehicleMarker'
+  /v1/trips:
+    get:
+      summary: List trips
+      parameters:
+      - name: vehicle_pid
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: from
+        in: query
+        schema:
+          type: integer
+      - name: to
+        in: query
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Paginated trips
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TripSummary'
+                  next_cursor:
+                    type: string
+                    nullable: true
+  /v1/trips/{id}:
+    get:
+      summary: Get single trip details with segmentation telemetry
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDetail'
+          description: Response for status 200
+        '404':
+          $ref: '#/components/responses/NotFound'
+          description: Response for status 404
+  /v1/cost/summary:
+    get:
+      summary: Fleet cost and fuel/energy summary
+      parameters:
+      - name: fleet_id
+        in: query
+        schema:
+          type: integer
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: group_by
+        in: query
+        schema:
+          type: string
+          enum:
+          - fleet
+          - vehicle
+          - day
+          - powertrain
+          default: day
+      responses:
+        '200':
+          description: Aggregated cost metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostSummary'
+  /v1/cost/idling/top:
+    get:
+      summary: Top-K idling vehicles/drivers
+      parameters:
+      - name: k
+        in: query
+        schema:
+          type: integer
+          default: 100
+      - name: window
+        in: query
+        schema:
+          type: string
+          enum:
+          - 1h
+          - 24h
+          - 7d
+          - 30d
+          default: 24h
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopIdler'
+          description: Response for status 200
+  /v1/cost/utilization:
+    get:
+      summary: Vehicle utilization hours vs target benchmarks
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UtilizationMetric'
+          description: Response for status 200
+  /v1/cost/opportunities:
+    get:
+      summary: Actionable savings recommendations (idling, charging, under-utilization)
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SavingsOpportunity'
+          description: Response for status 200
+  /v1/ev/fleet-status:
+    get:
+      summary: EV fleet battery status and range risk overview
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvFleetStatus'
+          description: Response for status 200
+  /v1/ev/nearest-charger:
+    get:
+      summary: "Find nearest reachable chargers using live Dijkstra search (\xC2\xA7\
+        7.12)"
+      parameters:
+      - name: vehicle_pid
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: k
+        in: query
+        schema:
+          type: integer
+          default: 5
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReachableCharger'
+          description: Response for status 200
+  /v1/ev/plan:
+    post:
+      summary: "Calculate single-vehicle cost-optimal charging schedule (DP \xC2\xA7\
+        7.13)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvPlanRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvPlanResponse'
+          description: Response for status 200
+  /v1/ev/depot-plan:
+    post:
+      summary: "Calculate depot fleet charging schedule under site power cap (\xC2\
+        \xA77.14)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepotPlanRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepotPlanResponse'
+          description: Response for status 200
+  /v1/ev/battery-health/{pid}:
+    get:
+      summary: "Get vehicle battery State of Health history and estimate (\xC2\xA7\
+        7.15)"
+      parameters:
+      - $ref: '#/components/parameters/VehiclePidParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatteryHealth'
+          description: Response for status 200
+  /v1/safety/drivers:
+    get:
+      summary: "Driver safety leaderboard with decayed scores (\xC2\xA77.16, \xC2\xA7\
+        8.S1)"
+      parameters:
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - score_asc
+          - score_desc
+          default: score_asc
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DriverSafetyScore'
+                  next_cursor:
+                    type: string
+                    nullable: true
+          description: Response for status 200
+  /v1/safety/drivers/{id}:
+    get:
+      summary: Get driver score components and actionable coaching advice
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverCoachingDetail'
+          description: Response for status 200
+  /v1/safety/vehicles/{pid}/events:
+    get:
+      summary: List harsh driving events for a vehicle
+      parameters:
+      - $ref: '#/components/parameters/VehiclePidParam'
+      - name: from
+        in: query
+        schema:
+          type: integer
+      - name: to
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SafetyEvent'
+          description: Response for status 200
+  /v1/geofences:
+    get:
+      summary: List configured geofences
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Geofence'
+          description: Response for status 200
+    post:
+      summary: Create geofence polygon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeofenceCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Geofence'
+          description: Response for status 201
+  /v1/geofences/{id}:
+    get:
+      summary: Get geofence
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Geofence'
+          description: Response for status 200
+    put:
+      summary: Update geofence
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeofenceCreate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Geofence'
+          description: Response for status 200
+    delete:
+      summary: Delete geofence
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '204':
+          description: Geofence deleted
+  /v1/assets/anomalies:
+    get:
+      summary: List asset anomalies (after-hours movements, tow alerts, off-depot
+        dwells)
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetAnomaly'
+          description: Response for status 200
+  /v1/assets/unapproved-depots:
+    get:
+      summary: "Discovered unapproved depot clusters via Union-Find (\xC2\xA77.18)"
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnapprovedDepot'
+          description: Response for status 200
+  /v1/assets/watchlist/{pid}:
+    post:
+      summary: Place vehicle into lender asset recovery mode
+      parameters:
+      - $ref: '#/components/parameters/VehiclePidParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - purpose
+              properties:
+                purpose:
+                  type: string
+                  enum:
+                  - RECOVERY
+                  - FRAUD_INVESTIGATION
+      responses:
+        '200':
+          description: Vehicle added to watchlist trail buffer
+    delete:
+      summary: Remove vehicle from watchlist
+      parameters:
+      - $ref: '#/components/parameters/VehiclePidParam'
+      responses:
+        '204':
+          description: Watchlist removed
+  /v1/alerts:
+    get:
+      summary: List operational alerts
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - OPEN
+          - ACK
+          - RESOLVED
+      - name: severity
+        in: query
+        schema:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+          - CRITICAL
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+                  next_cursor:
+                    type: string
+                    nullable: true
+          description: Response for status 200
+  /v1/alerts/{id}:
+    patch:
+      summary: Update alert lifecycle status or assignment
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                  - OPEN
+                  - ACK
+                  - RESOLVED
+                assignee:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+          description: Response for status 200
+  /v1/alerts/stream:
+    get:
+      summary: "Real-time Server-Sent Events (SSE) alert stream (\xC2\xA79)"
+      responses:
+        '200':
+          description: SSE event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /v1/share/products:
+    get:
+      summary: "List authorized privacy-safe data products under recipient DSA (\xC2\
+        \xA78.S3)"
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DataSharingProduct'
+          description: Response for status 200
+  /v1/share/products/{id}/data:
+    get:
+      summary: Query privacy-safe differential-privacy aggregates
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: precision
+        in: query
+        schema:
+          type: integer
+          minimum: 4
+          maximum: 7
+          default: 6
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShareAggregateRow'
+          description: Response for status 200
+  /v1/privacy/erasure-requests:
+    post:
+      summary: "Submit a right-to-erasure request (\xC2\xA78.S3)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErasureRequestCreate'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErasureRequest'
+          description: Response for status 202
+  /v1/privacy/erasure-requests/{id}:
+    get:
+      summary: Check erasure execution status and verification report
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErasureRequest'
+          description: Response for status 200
+  /v1/audit:
+    get:
+      summary: "Query immutable audit hash chain (\xC2\xA77.20)"
+      parameters:
+      - name: actor_id
+        in: query
+        schema:
+          type: string
+      - name: resource_id
+        in: query
+        schema:
+          type: string
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLogEntry'
+          description: Response for status 200
+  /v1/admin/oem-mappings:
+    post:
+      summary: "Create or update OEM mapping configuration (\xC2\xA75.2)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Mapping configuration complying with oem_mapping_schema.json
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OemMapping'
+          description: Response for status 201
+  /v1/admin/oem-mappings/{id}/shadow:
+    post:
+      summary: Put mapping into SHADOW mode to test against live traffic
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OemMapping'
+          description: Response for status 200
+  /v1/admin/oem-mappings/{id}/activate:
+    post:
+      summary: Hot-activate mapping with zero-downtime hot-reload
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OemMapping'
+          description: Response for status 200
+  /v1/admin/vehicles/bulk:
+    post:
+      summary: Bulk register vehicles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/VehicleCreate'
+      responses:
+        '201':
+          description: Vehicles registered
+  /v1/admin/sim/start:
+    post:
+      summary: Start or resume vehicle simulation
+      responses:
+        '200':
+          description: Simulator started
+  /v1/admin/sim/stop:
+    post:
+      summary: Pause vehicle simulation
+      responses:
+        '200':
+          description: Simulator paused
+  /v1/admin/sim/burst:
+    post:
+      summary: "Trigger 3x shift-start traffic burst (\xC2\xA76.8)"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                multiplier:
+                  type: number
+                  default: 3.0
+                duration_s:
+                  type: integer
+                  default: 300
+      responses:
+        '200':
+          description: Burst triggered
+  /v1/admin/sim/status:
+    get:
+      summary: Get live simulator statistics and generation rate
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulatorStatus'
+          description: Response for status 200
+components:
+  securitySchemes:
+    OAuth2Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak realm fleetpulse JWT with tenant_id and roles claims
+    mTLS:
+      type: apiKey
+      name: X-Client-Cert
+      in: header
+      description: Mutual TLS client certificate CN verification
+  parameters:
+    VehiclePidParam:
+      name: pid
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+        description: Opaque keyset pagination cursor
+  responses:
+    NotFound:
+      description: Requested entity not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+  schemas:
+    HealthStatus:
+      type: object
+      required:
+      - status
+      - timestamp
+      properties:
+        status:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - DEGRADED
+        timestamp:
+          type: string
+          format: date-time
+    ProblemDetails:
+      type: object
+      description: RFC 7807 problem details
+      required:
+      - type
+      - title
+      - status
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+    Vehicle:
+      type: object
+      required:
+      - vehicle_pid
+      - fleet_id
+      - model_name
+      - powertrain
+      - status
+      properties:
+        vehicle_pid:
+          type: string
+          format: uuid
+        fleet_id:
+          type: integer
+        model_name:
+          type: string
+        powertrain:
+          type: string
+          enum:
+          - ICE_PETROL
+          - ICE_DIESEL
+          - HYBRID
+          - EV
+        body:
+          type: string
+          enum:
+          - SEDAN
+          - VAN
+          - TRUCK
+          - BUS
+        model_year:
+          type: integer
+        status:
+          type: string
+    VehicleDetail:
+      allOf:
+      - $ref: '#/components/schemas/Vehicle'
+      - type: object
+        properties:
+          battery_kwh:
+            type: number
+          tank_l:
+            type: number
+          idle_burn_lph:
+            type: number
+          current_driver:
+            type: string
+    VehicleCreate:
+      type: object
+      required:
+      - vin
+      - fleet_id
+      - model_id
+      - model_year
+      properties:
+        vin:
+          type: string
+        fleet_id:
+          type: integer
+        model_id:
+          type: integer
+        model_year:
+          type: integer
+    LiveState:
+      type: object
+      required:
+      - vehicle_pid
+      - lat
+      - lon
+      - speed_kmh
+      - heading_deg
+      - ts_event
+      - status
+      properties:
+        vehicle_pid:
+          type: string
+          format: uuid
+        lat:
+          type: number
+        lon:
+          type: number
+        speed_kmh:
+          type: number
+        heading_deg:
+          type: integer
+        ts_event:
+          type: integer
+        status:
+          type: string
+          enum:
+          - DRIVING
+          - STOPPED_ENGINE_ON
+          - PARKED
+          - CHARGING
+          - OFFLINE
+        soc_pct:
+          type: number
+          nullable: true
+        fuel_pct:
+          type: number
+          nullable: true
+        dtc_count:
+          type: integer
+    TracePoint:
+      type: object
+      required:
+      - ts
+      - lat
+      - lon
+      - speed_kmh
+      properties:
+        ts:
+          type: integer
+        lat:
+          type: number
+        lon:
+          type: number
+        speed_kmh:
+          type: number
+        soc_pct:
+          type: number
+          nullable: true
+        fuel_pct:
+          type: number
+          nullable: true
+    MapCluster:
+      type: object
+      required:
+      - geohash
+      - count
+      - lat
+      - lon
+      properties:
+        geohash:
+          type: string
+        count:
+          type: integer
+        lat:
+          type: number
+        lon:
+          type: number
+    VehicleMarker:
+      type: object
+      required:
+      - vehicle_pid
+      - lat
+      - lon
+      - status
+      properties:
+        vehicle_pid:
+          type: string
+          format: uuid
+        lat:
+          type: number
+        lon:
+          type: number
+        speed_kmh:
+          type: number
+        heading_deg:
+          type: integer
+        status:
+          type: string
+    TripSummary:
+      type: object
+      required:
+      - trip_id
+      - vehicle_pid
+      - start_ts
+      - end_ts
+      - distance_km
+      - duration_s
+      - cost
+      properties:
+        trip_id:
+          type: string
+        vehicle_pid:
+          type: string
+          format: uuid
+        start_ts:
+          type: integer
+        end_ts:
+          type: integer
+        distance_km:
+          type: number
+        duration_s:
+          type: integer
+        idle_s:
+          type: integer
+        energy_kwh:
+          type: number
+          nullable: true
+        fuel_l:
+          type: number
+          nullable: true
+        cost:
+          type: number
+    TripDetail:
+      allOf:
+      - $ref: '#/components/schemas/TripSummary'
+      - type: object
+        properties:
+          start_geohash7:
+            type: string
+          end_geohash7:
+            type: string
+          driver_id:
+            type: integer
+            nullable: true
+          co2_kg:
+            type: number
+    CostSummary:
+      type: object
+      required:
+      - total_cost
+      - energy_cost
+      - idle_cost
+      - total_km
+      - cost_per_km
+      properties:
+        total_cost:
+          type: number
+        energy_cost:
+          type: number
+        idle_cost:
+          type: number
+        total_km:
+          type: number
+        cost_per_km:
+          type: number
+        total_co2_kg:
+          type: number
+        potential_savings:
+          type: number
+    TopIdler:
+      type: object
+      required:
+      - vehicle_pid
+      - idle_minutes
+      - wasted_cost
+      properties:
+        vehicle_pid:
+          type: string
+          format: uuid
+        driver_name:
+          type: string
+          nullable: true
+        idle_minutes:
+          type: number
+        wasted_cost:
+          type: number
+        avoidable_cost:
+          type: number
+    UtilizationMetric:
+      type: object
+      required:
+      - body
+      - active_hours_avg
+      - target_hours
+      - utilization_pct
+      properties:
+        body:
+          type: string
+        active_hours_avg:
+          type: number
+        target_hours:
+          type: number
+        utilization_pct:
+          type: number
+        underused_count:
+          type: integer
+    SavingsOpportunity:
+      type: object
+      required:
+      - category
+      - description
+      - estimated_monthly_saving
+      - confidence
+      properties:
+        category:
+          type: string
+          enum:
+          - IDLE_REDUCTION
+          - SMART_CHARGING
+          - FLEET_RIGHT_SIZING
+        description:
+          type: string
+        target_count:
+          type: integer
+        estimated_monthly_saving:
+          type: number
+        confidence:
+          type: number
+    EvFleetStatus:
+      type: object
+      required:
+      - total_evs
+      - charging_now
+      - at_range_risk
+      - avg_soc_pct
+      properties:
+        total_evs:
+          type: integer
+        charging_now:
+          type: integer
+        at_range_risk:
+          type: integer
+        avg_soc_pct:
+          type: number
+        soc_histogram:
+          type: object
+          additionalProperties:
+            type: integer
+    ReachableCharger:
+      type: object
+      required:
+      - charger_id
+      - network
+      - distance_km
+      - power_kw
+      - est_energy_kwh
+      - reachable
+      properties:
+        charger_id:
+          type: integer
+        network:
+          type: string
+        distance_km:
+          type: number
+        power_kw:
+          type: number
+        est_energy_kwh:
+          type: number
+        tariff_per_kwh:
+          type: number
+        reachable:
+          type: boolean
+    EvPlanRequest:
+      type: object
+      required:
+      - vehicle_pid
+      - plug_out_ts
+      - target_soc
+      properties:
+        vehicle_pid:
+          type: string
+          format: uuid
+        plug_out_ts:
+          type: integer
+        target_soc:
+          type: number
+        charger_max_kw:
+          type: number
+    EvPlanResponse:
+      type: object
+      required:
+      - baseline_cost
+      - smart_cost
+      - saving
+      - schedule
+      properties:
+        baseline_cost:
+          type: number
+        smart_cost:
+          type: number
+        saving:
+          type: number
+        schedule:
+          type: array
+          items:
+            type: object
+            properties:
+              time_start:
+                type: integer
+              kw:
+                type: number
+              soc:
+                type: number
+    DepotPlanRequest:
+      type: object
+      required:
+      - depot_id
+      - site_power_cap_kw
+      - vehicles
+      properties:
+        depot_id:
+          type: integer
+        site_power_cap_kw:
+          type: number
+        vehicles:
+          type: array
+          items:
+            type: object
+            required:
+            - vehicle_pid
+            - plug_out_ts
+            - needed_kwh
+            properties:
+              vehicle_pid:
+                type: string
+                format: uuid
+              plug_out_ts:
+                type: integer
+              needed_kwh:
+                type: number
+              max_kw:
+                type: number
+    DepotPlanResponse:
+      type: object
+      required:
+      - total_baseline_cost
+      - total_smart_cost
+      - total_saving
+      properties:
+        total_baseline_cost:
+          type: number
+        total_smart_cost:
+          type: number
+        total_saving:
+          type: number
+        peak_drawn_kw:
+          type: number
+    BatteryHealth:
+      type: object
+      required:
+      - vehicle_pid
+      - current_soh_est
+      - qualifying_sessions_count
+      properties:
+        vehicle_pid:
+          type: string
+          format: uuid
+        current_soh_est:
+          type: number
+        qualifying_sessions_count:
+          type: integer
+    DriverSafetyScore:
+      type: object
+      required:
+      - driver_id
+      - display_name
+      - score
+      - harsh_brakes
+      - harsh_accels
+      - harsh_corners
+      - overspeeds
+      properties:
+        driver_id:
+          type: integer
+        display_name:
+          type: string
+        score:
+          type: number
+        harsh_brakes:
+          type: integer
+        harsh_accels:
+          type: integer
+        harsh_corners:
+          type: integer
+        overspeeds:
+          type: integer
+    DriverCoachingDetail:
+      type: object
+      required:
+      - driver_id
+      - score
+      - top_risk_factor
+      - coaching_text
+      properties:
+        driver_id:
+          type: integer
+        score:
+          type: number
+        top_risk_factor:
+          type: string
+        coaching_text:
+          type: string
+    SafetyEvent:
+      type: object
+      required:
+      - event_id
+      - ts
+      - event_type
+      - speed_kmh
+      - severity
+      properties:
+        event_id:
+          type: string
+        ts:
+          type: integer
+        event_type:
+          type: string
+          enum:
+          - HARSH_BRAKE
+          - HARSH_ACCEL
+          - HARSH_CORNER
+          - OVERSPEED
+          - COLLISION_SUSPECT
+        speed_kmh:
+          type: number
+        severity:
+          type: number
+    Geofence:
+      type: object
+      required:
+      - geofence_id
+      - name
+      - type
+      properties:
+        geofence_id:
+          type: integer
+        fleet_id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+          - DEPOT
+          - ALLOWED_ZONE
+          - RESTRICTED
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+    GeofenceCreate:
+      type: object
+      required:
+      - fleet_id
+      - name
+      - type
+      - coordinates
+      properties:
+        fleet_id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+          - DEPOT
+          - ALLOWED_ZONE
+          - RESTRICTED
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+    AssetAnomaly:
+      type: object
+      required:
+      - anomaly_id
+      - vehicle_pid
+      - type
+      - ts
+      - message
+      properties:
+        anomaly_id:
+          type: string
+        vehicle_pid:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+          - AFTER_HOURS_USE
+          - TOW_SUSPECTED
+          - SUSTAINED_OFF_DEPOT
+        ts:
+          type: integer
+        message:
+          type: string
+    UnapprovedDepot:
+      type: object
+      required:
+      - centroid_lat
+      - centroid_lon
+      - vehicle_count
+      - total_dwell_hours
+      properties:
+        centroid_lat:
+          type: number
+        centroid_lon:
+          type: number
+        vehicle_count:
+          type: integer
+        total_dwell_hours:
+          type: number
+    Alert:
+      type: object
+      required:
+      - alert_id
+      - vehicle_pid
+      - type
+      - severity
+      - status
+      - opened_at
+      - message
+      properties:
+        alert_id:
+          type: string
+          format: uuid
+        vehicle_pid:
+          type: string
+          format: uuid
+        type:
+          type: string
+        severity:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+          - CRITICAL
+        status:
+          type: string
+          enum:
+          - OPEN
+          - ACK
+          - RESOLVED
+        assignee:
+          type: string
+          nullable: true
+        opened_at:
+          type: string
+          format: date-time
+        message:
+          type: string
+    DataSharingProduct:
+      type: object
+      required:
+      - product_id
+      - name
+      - purpose
+      - allowed_precision
+      properties:
+        product_id:
+          type: string
+        name:
+          type: string
+        purpose:
+          type: string
+        allowed_precision:
+          type: integer
+    ShareAggregateRow:
+      type: object
+      required:
+      - geohash
+      - time_bucket
+      - metric_value
+      properties:
+        geohash:
+          type: string
+        time_bucket:
+          type: string
+        metric_value:
+          type: number
+        k_count:
+          type: integer
+    ErasureRequestCreate:
+      type: object
+      required:
+      - subject_type
+      - subject_id
+      properties:
+        subject_type:
+          type: string
+          enum:
+          - VEHICLE
+          - DRIVER
+        subject_id:
+          type: string
+    ErasureRequest:
+      type: object
+      required:
+      - request_id
+      - subject_type
+      - subject_id
+      - status
+      - requested_at
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        subject_type:
+          type: string
+        subject_id:
+          type: string
+        status:
+          type: string
+          enum:
+          - REQUESTED
+          - APPROVED
+          - EXECUTING
+          - VERIFYING
+          - COMPLETED
+          - FAILED
+        requested_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        verification_report:
+          type: object
+    AuditLogEntry:
+      type: object
+      required:
+      - audit_id
+      - ts
+      - actor_id
+      - action
+      - resource_type
+      - resource_id
+      - row_hash
+      properties:
+        audit_id:
+          type: string
+          format: uuid
+        ts:
+          type: string
+          format: date-time
+        actor_id:
+          type: string
+        action:
+          type: string
+        resource_type:
+          type: string
+        resource_id:
+          type: string
+        purpose:
+          type: string
+        row_hash:
+          type: string
+    OemMapping:
+      type: object
+      required:
+      - mapping_id
+      - oem
+      - schema_ver
+      - version
+      - status
+      properties:
+        mapping_id:
+          type: integer
+        oem:
+          type: string
+        schema_ver:
+          type: integer
+        version:
+          type: integer
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - SHADOW
+          - ACTIVE
+          - RETIRED
+        config:
+          type: object
+    SimulatorStatus:
+      type: object
+      required:
+      - running
+      - vehicle_count
+      - current_events_per_sec
+      - total_emitted
+      properties:
+        running:
+          type: boolean
+        vehicle_count:
+          type: integer
+        current_events_per_sec:
+          type: number
+        total_emitted:
+          type: integer

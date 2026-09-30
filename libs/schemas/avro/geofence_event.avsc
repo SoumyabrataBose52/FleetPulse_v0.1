@@ -1,0 +1,64 @@
+{
+  "type": "record",
+  "name": "GeofenceEvent",
+  "namespace": "com.fleetpulse.events.geofence.v1",
+  "doc": "Geofence transition/breach event (§5.4, §7.17, §8.S2) published to events.geofence.v1",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Deterministic ID: hash(vehicle_pid, geofence_id, ts, transition)"
+    },
+    {
+      "name": "vehicle_pid",
+      "type": "string",
+      "doc": "Pseudonymous vehicle UUID"
+    },
+    {
+      "name": "tenant_id",
+      "type": "int",
+      "doc": "Tenant ID"
+    },
+    {
+      "name": "geofence_id",
+      "type": "int",
+      "doc": "Geofence entity ID"
+    },
+    {
+      "name": "geofence_type",
+      "type": {
+        "type": "enum",
+        "name": "GeofenceType",
+        "symbols": ["DEPOT", "ALLOWED_ZONE", "RESTRICTED"]
+      },
+      "doc": "Type of geofence"
+    },
+    {
+      "name": "transition",
+      "type": {
+        "type": "enum",
+        "name": "GeofenceTransition",
+        "symbols": ["ENTER", "EXIT", "BREACH"]
+      },
+      "doc": "Transition nature: enter, exit, or unauthorized breach"
+    },
+    {
+      "name": "ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Event timestamp in UTC ms"
+    },
+    {
+      "name": "lat_e6",
+      "type": "int",
+      "doc": "Latitude micro-degrees"
+    },
+    {
+      "name": "lon_e6",
+      "type": "int",
+      "doc": "Longitude micro-degrees"
+    }
+  ]
+}

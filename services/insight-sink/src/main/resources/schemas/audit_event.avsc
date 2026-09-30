@@ -1,0 +1,71 @@
+{
+  "type": "record",
+  "name": "AuditEvent",
+  "namespace": "com.fleetpulse.audit.v1",
+  "doc": "Immutable compliance and access audit event (§4.3, §5.3, §7.20) published to audit.v1",
+  "fields": [
+    {
+      "name": "audit_id",
+      "type": "string",
+      "doc": "Unique audit record UUID"
+    },
+    {
+      "name": "ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Event timestamp in UTC ms"
+    },
+    {
+      "name": "actor_id",
+      "type": "string",
+      "doc": "User ID, API key ID, or service account identifier"
+    },
+    {
+      "name": "actor_type",
+      "type": "string",
+      "doc": "USER, SERVICE, PARTNER, SYSTEM"
+    },
+    {
+      "name": "tenant_id",
+      "type": "int",
+      "doc": "Tenant ID context"
+    },
+    {
+      "name": "action",
+      "type": "string",
+      "doc": "Action performed (e.g. READ_LOCATION, EXPORT_FLEET, UPDATE_GEOFENCE, SUBMIT_ERASURE)"
+    },
+    {
+      "name": "resource_type",
+      "type": "string",
+      "doc": "Target entity class (e.g. VEHICLE, DRIVER, TRIP, REPORT)"
+    },
+    {
+      "name": "resource_id",
+      "type": "string",
+      "doc": "Target resource ID or query description"
+    },
+    {
+      "name": "purpose",
+      "type": "string",
+      "doc": "Legitimate business purpose or DSA agreement code"
+    },
+    {
+      "name": "ip",
+      "type": "string",
+      "doc": "Client IP address"
+    },
+    {
+      "name": "prev_hash",
+      "type": "string",
+      "doc": "SHA-256 hash of the preceding audit record in tenant chain (§7.20)"
+    },
+    {
+      "name": "row_hash",
+      "type": "string",
+      "doc": "SHA-256 hash of this record combined with prev_hash (§7.20)"
+    }
+  ]
+}

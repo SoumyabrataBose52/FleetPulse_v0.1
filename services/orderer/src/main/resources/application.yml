@@ -1,0 +1,51 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: orderer
+  threads:
+    virtual:
+      enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: fleetpulse-orderer
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+
+orderer:
+  kafka:
+    canonical-topic: ${TOPIC_CANONICAL_TELEMETRY:telemetry.canonical.v1}
+    clean-topic: ${TOPIC_CLEAN_TELEMETRY:telemetry.clean.v1}
+    late-topic: ${TOPIC_LATE_TELEMETRY:telemetry.late.v1}
+    alerts-topic: ${TOPIC_ALERTS:alerts.v1}
+  watermark-lag-ms: 10000
+  max-buffer-per-vehicle: 256
+  seq-window-size: 4096
+  silent-flush-interval-ms: 1000
+  fastpath-enabled: true

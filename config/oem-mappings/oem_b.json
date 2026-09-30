@@ -1,0 +1,73 @@
+{
+  "oem": "B",
+  "schema_ver": 1,
+  "format": "json",
+  "description": "Borealis OEM format: JSON snake_case, imperial units, semicolon DTCs (§5.2)",
+  "vin_field": "vin",
+  "fields": {
+    "ts_event": {
+      "source": "ts_epoch",
+      "required": true,
+      "transform": "epoch_s_to_ms"
+    },
+    "seq": {
+      "source": "counter",
+      "transform": "direct"
+    },
+    "lat_e6": {
+      "source": "gps.lat",
+      "transform": "scale",
+      "factor": 1000000
+    },
+    "lon_e6": {
+      "source": "gps.lng",
+      "transform": "scale",
+      "factor": 1000000
+    },
+    "heading_deg": {
+      "source": "gps.hdg",
+      "transform": "direct"
+    },
+    "speed_kmh": {
+      "source": "speed_mph",
+      "transform": "scale",
+      "factor": 1.609344
+    },
+    "odo_km": {
+      "source": "odo_mi",
+      "transform": "scale",
+      "factor": 1.609344
+    },
+    "ignition": {
+      "source": "ign",
+      "transform": "enum_map",
+      "mapping": {
+        "1": true,
+        "0": false,
+        "true": true,
+        "false": false
+      }
+    },
+    "fuel_pct": {
+      "source": "fuel_frac",
+      "transform": "scale",
+      "factor": 100.0
+    },
+    "dtc": {
+      "source": "trouble_codes",
+      "transform": "split_list",
+      "separator": ";",
+      "default": []
+    },
+    "evt": {
+      "source": "evt_code",
+      "transform": "enum_map",
+      "mapping": {
+        "HB": "HARSH_BRAKE",
+        "HA": "HARSH_ACCEL",
+        "HC": "HARSH_CORNER",
+        "OS": "OVERSPEED"
+      }
+    }
+  }
+}

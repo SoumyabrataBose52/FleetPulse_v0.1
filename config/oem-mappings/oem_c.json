@@ -1,0 +1,52 @@
+{
+  "oem": "C",
+  "schema_ver": 1,
+  "format": "signal_list",
+  "description": "Cetus OEM format: JSON EV signal list, epoch ms, meter odometer (§5.2)",
+  "vin_field": "deviceId",
+  "fields": {
+    "ts_event": {
+      "source": "tsMs",
+      "required": true,
+      "transform": "direct"
+    },
+    "speed_kmh": {
+      "source": "SPD",
+      "transform": "direct"
+    },
+    "soc_pct": {
+      "source": "SOC",
+      "transform": "scale",
+      "factor": 100.0
+    },
+    "odo_km": {
+      "source": "ODO",
+      "transform": "scale",
+      "factor": 0.001
+    },
+    "lat_e6": {
+      "source": "LAT",
+      "transform": "scale",
+      "factor": 1000000
+    },
+    "lon_e6": {
+      "source": "LON",
+      "transform": "scale",
+      "factor": 1000000
+    },
+    "charge_kw": {
+      "source": "CHG_KW",
+      "transform": "direct"
+    },
+    "evt": {
+      "source": "flags",
+      "transform": "enum_map",
+      "mapping": {
+        "HB": "HARSH_BRAKE",
+        "HA": "HARSH_ACCEL",
+        "HC": "HARSH_CORNER",
+        "OS": "OVERSPEED"
+      }
+    }
+  }
+}

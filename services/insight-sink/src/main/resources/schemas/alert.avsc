@@ -1,0 +1,70 @@
+{
+  "type": "record",
+  "name": "AlertEvent",
+  "namespace": "com.fleetpulse.alerts.v1",
+  "doc": "Operational alert notification (§4.3, §5.3, §8) published to alerts.v1",
+  "fields": [
+    {
+      "name": "alert_id",
+      "type": "string",
+      "doc": "Unique alert UUID"
+    },
+    {
+      "name": "alert_key",
+      "type": "string",
+      "doc": "Idempotency key: hash(vehicle_pid, type, window_start) (§4.5)"
+    },
+    {
+      "name": "tenant_id",
+      "type": "int",
+      "doc": "Tenant ID"
+    },
+    {
+      "name": "vehicle_pid",
+      "type": "string",
+      "doc": "Target vehicle UUID"
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "doc": "Alert category: RANGE_RISK, GEOFENCE_BREACH, TOW_SUSPECTED, CRITICAL_DTC, IDLING_EXCESS, AFTER_HOURS_USE"
+    },
+    {
+      "name": "severity",
+      "type": {
+        "type": "enum",
+        "name": "AlertSeverity",
+        "symbols": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+      },
+      "doc": "Alert priority level"
+    },
+    {
+      "name": "ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Alert occurrence timestamp UTC ms"
+    },
+    {
+      "name": "message",
+      "type": "string",
+      "doc": "Human readable alert message"
+    },
+    {
+      "name": "details",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Key-value evidence parameters (e.g. soc, speed, geofence_id)"
+    },
+    {
+      "name": "insight_ref",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "MongoDB ObjectId reference to rich polymorphic insight document if applicable"
+    }
+  ]
+}

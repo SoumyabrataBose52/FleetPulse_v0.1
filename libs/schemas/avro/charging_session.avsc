@@ -1,0 +1,97 @@
+{
+  "type": "record",
+  "name": "ChargingSessionEvent",
+  "namespace": "com.fleetpulse.events.charging.v1",
+  "doc": "EV charging session event (§5.4, §7.13, §7.15, §8.M4) published to events.charging.v1",
+  "fields": [
+    {
+      "name": "session_id",
+      "type": "string",
+      "doc": "Deterministic ID: hash(vehicle_pid, start_ts)"
+    },
+    {
+      "name": "vehicle_pid",
+      "type": "string",
+      "doc": "Pseudonymous vehicle UUID"
+    },
+    {
+      "name": "tenant_id",
+      "type": "int",
+      "doc": "Tenant ID"
+    },
+    {
+      "name": "charger_id",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Nearest charger ID if identified within 50m"
+    },
+    {
+      "name": "depot_id",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Depot ID if charging at depot"
+    },
+    {
+      "name": "start_ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Session start timestamp UTC ms"
+    },
+    {
+      "name": "end_ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Session end timestamp UTC ms"
+    },
+    {
+      "name": "start_soc_pct",
+      "type": "float",
+      "doc": "Starting battery SoC percentage [0.0, 100.0]"
+    },
+    {
+      "name": "end_soc_pct",
+      "type": "float",
+      "doc": "Ending battery SoC percentage [0.0, 100.0]"
+    },
+    {
+      "name": "energy_kwh",
+      "type": "double",
+      "doc": "Delivered electrical energy in kWh"
+    },
+    {
+      "name": "avg_power_kw",
+      "type": "float",
+      "doc": "Average grid power in kW"
+    },
+    {
+      "name": "peak_power_kw",
+      "type": "float",
+      "doc": "Peak power drawn in kW"
+    },
+    {
+      "name": "baseline_cost",
+      "type": "double",
+      "doc": "Uncontrolled immediate charging cost"
+    },
+    {
+      "name": "smart_cost",
+      "type": "double",
+      "doc": "DP-optimized scheduled charging cost"
+    },
+    {
+      "name": "cost_saving",
+      "type": "double",
+      "doc": "Potential savings: baseline_cost - smart_cost"
+    },
+    {
+      "name": "soh_estimate",
+      "type": ["null", "float"],
+      "default": null,
+      "doc": "Updated battery State of Health estimate if qualifying session (delta_soc >= 30pp)"
+    }
+  ]
+}

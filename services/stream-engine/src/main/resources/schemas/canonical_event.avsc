@@ -1,0 +1,174 @@
+{
+  "type": "record",
+  "name": "CanonicalTelemetryEvent",
+  "namespace": "com.fleetpulse.telemetry.v1",
+  "doc": "FleetPulse canonical telemetry event schema v1 (§5.1). Source of truth for clean normalized events.",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Deterministic event identifier: hash(vehicle_pid, ts_event, seq|content) (§4.5)"
+    },
+    {
+      "name": "vehicle_pid",
+      "type": "string",
+      "doc": "Pseudonymous vehicle UUID; VIN is stripped at normalizer (§4.3, §5.1)"
+    },
+    {
+      "name": "tenant_id",
+      "type": "int",
+      "doc": "Tenant ID resolved by normalizer from vehicle lookup"
+    },
+    {
+      "name": "oem",
+      "type": "string",
+      "doc": "Source OEM identifier: A, B, C, D, E"
+    },
+    {
+      "name": "schema_ver",
+      "type": "int",
+      "doc": "Source OEM schema version"
+    },
+    {
+      "name": "ts_event",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Device event generation timestamp in UTC epoch milliseconds"
+    },
+    {
+      "name": "ts_ingest",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Gateway ingest timestamp in UTC epoch milliseconds"
+    },
+    {
+      "name": "seq",
+      "type": ["null", "long"],
+      "default": null,
+      "doc": "Per-vehicle sequence counter if provided by OEM"
+    },
+    {
+      "name": "lat_e6",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Latitude in micro-degrees (degrees * 1e6). ~0.11m precision"
+    },
+    {
+      "name": "lon_e6",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Longitude in micro-degrees (degrees * 1e6). ~0.11m precision"
+    },
+    {
+      "name": "heading_deg",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Heading in degrees [0, 359]"
+    },
+    {
+      "name": "speed_kmh",
+      "type": ["null", "float"],
+      "default": null,
+      "doc": "Speed normalized to km/h"
+    },
+    {
+      "name": "odo_km",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Cumulative vehicle odometer in km"
+    },
+    {
+      "name": "ignition",
+      "type": ["null", "boolean"],
+      "default": null,
+      "doc": "Engine/vehicle ignition state (true = ON, false = OFF)"
+    },
+    {
+      "name": "fuel_pct",
+      "type": ["null", "float"],
+      "default": null,
+      "doc": "Fuel level percentage [0.0, 100.0] for ICE/hybrid"
+    },
+    {
+      "name": "soc_pct",
+      "type": ["null", "float"],
+      "default": null,
+      "doc": "Battery state of charge percentage [0.0, 100.0] for EV/hybrid"
+    },
+    {
+      "name": "batt_voltage_v",
+      "type": ["null", "float"],
+      "default": null,
+      "doc": "Traction/12V battery voltage in Volts"
+    },
+    {
+      "name": "charge_state",
+      "type": [
+        "null",
+        {
+          "type": "enum",
+          "name": "ChargeState",
+          "symbols": ["NONE", "PLUGGED", "CHARGING", "COMPLETE"]
+        }
+      ],
+      "default": null,
+      "doc": "EV charging connection and progress state"
+    },
+    {
+      "name": "charge_kw",
+      "type": ["null", "float"],
+      "default": null,
+      "doc": "Grid-side charging power in kW (always >= 0.0)"
+    },
+    {
+      "name": "coolant_c",
+      "type": ["null", "float"],
+      "default": null,
+      "doc": "Coolant temperature in degrees Celsius"
+    },
+    {
+      "name": "rpm",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Engine speed in RPM"
+    },
+    {
+      "name": "dtc",
+      "type": {
+        "type": "array",
+        "items": "string"
+      },
+      "default": [],
+      "doc": "Validated Diagnostic Trouble Codes (SAE J2012 / ISO 15031)"
+    },
+    {
+      "name": "evt",
+      "type": [
+        "null",
+        {
+          "type": "enum",
+          "name": "TelemetryEventType",
+          "symbols": [
+            "HARSH_BRAKE",
+            "HARSH_ACCEL",
+            "HARSH_CORNER",
+            "OVERSPEED",
+            "COLLISION_SUSPECT"
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "OEM-reported event (stream engines recompute independently for consistency)"
+    },
+    {
+      "name": "quality",
+      "type": "int",
+      "default": 0,
+      "doc": "Quality bitmask: 1=GPS_SUSPECT, 2=LATE, 4=IMPUTED, 8=VIN_WARN, 16=CLOCK_SKEW"
+    }
+  ]
+}

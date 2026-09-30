@@ -1,0 +1,49 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: gateway
+  threads:
+    virtual:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      retries: 3
+      batch-size: 65536
+      buffer-memory: 33554432
+      compression-type: lz4
+      properties:
+        enable.idempotence: true
+        linger.ms: 5
+        max.in.flight.requests.per.connection: 5
+
+gateway:
+  kafka:
+    raw-topic: ${KAFKA_RAW_TOPIC:raw.telemetry}
+  queue:
+    capacity: ${GATEWAY_QUEUE_CAPACITY:50000}
+    high-watermark-ratio: ${GATEWAY_HIGH_WATERMARK:0.85}
+  max-batch-size: 500
+  max-payload-bytes: 1048576 # 1 MB
+  mtls:
+    enabled: ${GATEWAY_MTLS_ENABLED:false}
+    allowed-cns:
+      - oem-client-a
+      - oem-client-b
+      - oem-client-c
+      - oem-client-d
+      - oem-client-e
+      - gateway.fleetpulse.local
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always

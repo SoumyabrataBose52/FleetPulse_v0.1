@@ -1,0 +1,86 @@
+{
+  "type": "record",
+  "name": "IdleEvent",
+  "namespace": "com.fleetpulse.events.idle.v1",
+  "doc": "Excess idling episode event (§5.4, §7.10, §8.M3) published to events.idle.v1",
+  "fields": [
+    {
+      "name": "idle_id",
+      "type": "string",
+      "doc": "Deterministic ID: hash(vehicle_pid, start_ts)"
+    },
+    {
+      "name": "vehicle_pid",
+      "type": "string",
+      "doc": "Pseudonymous vehicle UUID"
+    },
+    {
+      "name": "tenant_id",
+      "type": "int",
+      "doc": "Tenant ID"
+    },
+    {
+      "name": "driver_id",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Assigned driver ID"
+    },
+    {
+      "name": "start_ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Idle episode start timestamp UTC ms"
+    },
+    {
+      "name": "end_ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Idle episode end timestamp UTC ms"
+    },
+    {
+      "name": "duration_s",
+      "type": "int",
+      "doc": "Duration of idle episode in seconds (>= min_idle_s)"
+    },
+    {
+      "name": "lat_e6",
+      "type": "int",
+      "doc": "Latitude micro-degrees"
+    },
+    {
+      "name": "lon_e6",
+      "type": "int",
+      "doc": "Longitude micro-degrees"
+    },
+    {
+      "name": "geohash7",
+      "type": "string",
+      "doc": "Location geohash precision 7"
+    },
+    {
+      "name": "fuel_burned_l",
+      "type": "double",
+      "doc": "Estimated fuel burned during idling in Liters"
+    },
+    {
+      "name": "cost",
+      "type": "double",
+      "doc": "Cost of wasted fuel"
+    },
+    {
+      "name": "avoidable_cost",
+      "type": "double",
+      "doc": "Avoidable cost exceeding allowed threshold"
+    },
+    {
+      "name": "co2_kg",
+      "type": "double",
+      "default": 0.0,
+      "doc": "Estimated CO2 emitted from idling in kg"
+    }
+  ]
+}

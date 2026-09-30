@@ -1,0 +1,87 @@
+{
+  "type": "record",
+  "name": "SafetyEvent",
+  "namespace": "com.fleetpulse.events.safety.v1",
+  "doc": "Driver safety harsh event (§5.4, §7.16, §8.S1) published to events.safety.v1",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Deterministic event ID: hash(vehicle_pid, ts, event_type)"
+    },
+    {
+      "name": "vehicle_pid",
+      "type": "string",
+      "doc": "Pseudonymous vehicle UUID"
+    },
+    {
+      "name": "tenant_id",
+      "type": "int",
+      "doc": "Tenant ID"
+    },
+    {
+      "name": "driver_id",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Assigned driver ID"
+    },
+    {
+      "name": "ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Event timestamp in UTC ms"
+    },
+    {
+      "name": "event_type",
+      "type": {
+        "type": "enum",
+        "name": "SafetyEventType",
+        "symbols": [
+          "HARSH_BRAKE",
+          "HARSH_ACCEL",
+          "HARSH_CORNER",
+          "OVERSPEED",
+          "COLLISION_SUSPECT"
+        ]
+      },
+      "doc": "Detected harsh driving event type"
+    },
+    {
+      "name": "severity",
+      "type": "float",
+      "doc": "Calculated event severity metric (e.g. m/s2 or speed ratio)"
+    },
+    {
+      "name": "lat_e6",
+      "type": "int",
+      "doc": "Latitude micro-degrees"
+    },
+    {
+      "name": "lon_e6",
+      "type": "int",
+      "doc": "Longitude micro-degrees"
+    },
+    {
+      "name": "speed_kmh",
+      "type": "float",
+      "doc": "Vehicle speed during event in km/h"
+    },
+    {
+      "name": "speed_limit_kmh",
+      "type": "float",
+      "doc": "Road segment speed limit in km/h"
+    },
+    {
+      "name": "accel_ms2",
+      "type": "float",
+      "doc": "Measured acceleration in m/s^2 (negative for decel)"
+    },
+    {
+      "name": "weight",
+      "type": "float",
+      "doc": "Risk scoring penalty weight"
+    }
+  ]
+}

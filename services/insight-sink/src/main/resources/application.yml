@@ -1,0 +1,62 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: insight-sink
+  threads:
+    virtual:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: insight-sink-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 500
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+
+  datasource:
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/fleetpulse}
+    username: ${POSTGRES_USER:fleetpulse}
+    password: ${POSTGRES_PASSWORD:fleetpulse_dev}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 5000
+
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://fleetpulse:fleetpulse_dev@localhost:27017/fleetpulse}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+clickhouse:
+  url: ${CLICKHOUSE_URL:http://localhost:8123}
+  database: ${CLICKHOUSE_DB:fleetpulse}
+  user: ${CLICKHOUSE_USER:fleetpulse}
+  password: ${CLICKHOUSE_PASSWORD:fleetpulse_dev}
+
+fleetpulse:
+  sink:
+    topics:
+      trips: ${TOPIC_TRIPS:events.trip.v1}
+      idle: ${TOPIC_IDLE:events.idle.v1}
+      charging: ${TOPIC_CHARGING:events.charging.v1}
+      safety: ${TOPIC_SAFETY:events.safety.v1}
+      alerts: ${TOPIC_ALERTS:events.alerts.v1}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always

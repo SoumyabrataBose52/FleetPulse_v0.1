@@ -1,0 +1,193 @@
+## FleetPulse — default parameters
+## Every value here is illustrative and overridable via environment variables.
+## Services read this file at startup; never hard-code these values in code.
+
+geo:
+  earth_radius_km: 6371.0088
+  geohash_live_precisions: [3, 4, 5, 6, 7]
+  snap_grid_m: 500
+  map_match_max_m: 30
+  map_match_heading_deg: 45
+
+pipeline:
+  partitions: 64
+  allowed_lateness_s: 10
+  reorder_buffer_max: 256
+  dedupe_seq_window: 4096
+  dedupe_exact_window_s: 600
+  bloom_fp_rate: 0.001
+  bloom_generation_s: 60
+  future_ts_tolerance_s: 300
+  live_write_interval_ms: 1000
+  offline_after_s: 90
+
+gps:
+  max_implied_speed_kmh: 250
+  outlier_speed_multiplier: 3
+  relocation_confirm_points: 3
+  relocation_radius_m: 100
+
+trip:
+  move_enter_kmh: 5
+  move_exit_kmh: 1
+  start_confirm_s: 10
+  start_displacement_m: 50
+  anchor_radius_m: 30
+  ignition_confirm_s: 30
+  no_ignition_stop_s: 300
+  gap_truncate_s: 900
+  dp_theta_kmh: 5
+  dp_lambda: 8
+
+idle:
+  speed_max_kmh: 2
+  resume_kmh: 5
+  min_idle_s: 120
+  gap_close_s: 60
+  allowed_idle_min_per_day: 10
+  co2_kg_per_l:
+    petrol: 2.31
+    diesel: 2.68
+
+utilisation:
+  target_active_h_per_day:
+    SEDAN: 6
+    VAN: 7
+    TRUCK: 8
+    BUS: 9
+  underused_days: 7
+  fixed_cost_per_day:
+    SEDAN: 12
+    VAN: 20
+    TRUCK: 45
+    BUS: 50
+
+prices:
+  fuel_per_l:
+    petrol: 1.30
+    diesel: 1.15
+  tariff_per_kwh:
+    offpeak: 0.08
+    standard: 0.14
+    peak: 0.22
+    public_dc: 0.35
+  tariff_periods:
+    offpeak: "22:00-06:00"
+    peak: "18:00-22:00"
+
+ev:
+  slot_minutes: 15
+  energy_step_kwh: 0.5
+  charge_efficiency: 0.92
+  taper_start_soc: 0.80
+  taper_end_power_fraction: 0.10
+  reserve_fraction: 0.10
+  range_risk_safety_factor: 1.25
+  soh_min_delta_soc_pp: 30
+  soh_sessions_median: 5
+  range_check_soc_gate_pct: 30
+  range_check_cooldown_s: 30
+
+routing:
+  consumption_base_kwh_per_km: 0.15
+  consumption_k: 0.00003
+  consumption_v_opt_kmh: 50
+  energy_scale:
+    SEDAN: 1.0
+    VAN: 1.5
+    BUS: 4.0
+    TRUCK: 4.5
+  nearest_chargers_returned: 5
+
+safety:
+  harsh_brake_ms2: 3.0
+  harsh_accel_ms2: 2.5
+  harsh_corner_ms2: 3.0
+  overspeed_factor: 1.10
+  overspeed_min_s: 10
+  weights:
+    HARSH_BRAKE: 3
+    HARSH_ACCEL: 2
+    HARSH_CORNER: 2
+    OVERSPEED_BASE: 1
+  decay_half_life_days: 14
+  r0: 8
+  risky_score_below: 60
+  risky_drop_points_7d: 10
+
+geofence:
+  enter_confirm_samples: 2
+  exit_confirm_samples: 3
+  activity_baseline_days: 28
+  activity_min_days: 14
+  activity_rare_p: 0.05
+  activity_min_moving_min: 10
+  tow_displacement_m: 300
+  tow_window_s: 60
+  tow_implied_speed_kmh: 10
+  tow_samples: 3
+  unapproved_dwell_min: 10
+  unapproved_min_vehicles: 3
+  unapproved_min_days: 3
+  unapproved_window_days: 7
+
+sketch:
+  cms_epsilon: 0.0001
+  cms_delta: 0.01
+  topk: 100
+  sliding_minutes: 60
+
+privacy:
+  k_min: 10
+  dominance_max_share: 0.5
+  contribution_bound_L: 5
+  epsilon_per_release: 0.5
+  epsilon_daily_budget: 5.0
+  geohash_min_precision: 5
+  time_bucket_min_minutes: 60
+
+audit:
+  hash: sha256
+
+api:
+  page_size_default: 50
+  page_size_max: 200
+  rate_limit_per_min:
+    web_user: 600
+    partner: 120
+  cache_ttl_s:
+    summary: 30
+    clusters: 2
+
+retention:
+  hot_days: 7
+  warm_days: 90
+  cold_days: 365
+  insight_days: 180
+  quarantine_days: 14
+  trip_hot_days: 60
+
+slo:
+  e2e_p95_s: 2
+  alert_p95_s: 5
+  api_p95_ms: 200
+  api_p99_ms: 500
+
+## Simulator presets
+simulator:
+  presets:
+    dev:
+      vehicles: 1000
+      history_days: 7
+      moving_interval_s: 10
+      parked_interval_s: 300
+    demo:
+      vehicles: 100000
+      history_days: 3
+      moving_interval_s: 60
+      parked_interval_s: 900
+    scale:
+      vehicles: 100000
+      history_days: 30
+      moving_interval_s: 30
+      parked_interval_s: 900

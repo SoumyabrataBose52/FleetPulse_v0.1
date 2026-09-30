@@ -1,0 +1,48 @@
+{
+  "oem": "E",
+  "schema_ver": 2,
+  "format": "json",
+  "description": "Echo OEM format v2 (schema drift): Array loc [lon, lat], m/s speed, nested batt with negative kW charging (§5.2)",
+  "vin_field": "vin",
+  "fields": {
+    "ts_event": {
+      "source": "t",
+      "required": true,
+      "transform": "iso8601_to_ms"
+    },
+    "lon_e6": {
+      "source": "loc",
+      "transform": "array_index",
+      "index": 0,
+      "factor": 1000000
+    },
+    "lat_e6": {
+      "source": "loc",
+      "transform": "array_index",
+      "index": 1,
+      "factor": 1000000
+    },
+    "speed_kmh": {
+      "source": "spd_ms",
+      "transform": "scale",
+      "factor": 3.6
+    },
+    "soc_pct": {
+      "source": "batt.soc",
+      "transform": "scale",
+      "factor": 100.0
+    },
+    "batt_voltage_v": {
+      "source": "batt.volt",
+      "transform": "direct"
+    },
+    "charge_kw": {
+      "source": "batt.kw",
+      "transform": "negative_to_charge_kw"
+    },
+    "charge_state": {
+      "source": "batt.kw",
+      "transform": "negative_to_charge_state"
+    }
+  }
+}

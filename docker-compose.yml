@@ -1,0 +1,513 @@
+version: "3.9"
+
+## =============================================================================
+## FleetPulse — Docker Compose
+## Profiles:
+##   core  → all datastores + broker (start this first)
+##   app   → all backend services
+##   sim   → simulator
+##   obs   → observability (Prometheus, Grafana, Loki)
+##   lite  → reduced memory for laptops (1K vehicles)
+## =============================================================================
+
+x-common-env: &common-env
+  TZ: UTC
+  FLEETPULSE_CONFIG: /app/config/defaults.yaml
+
+x-healthcheck-defaults: &hc-defaults
+  interval: 10s
+  timeout: 5s
+  retries: 10
+  start_period: 30s
+
+networks:
+  fleetnet:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  clickhouse_data:
+  redis_data:
+  mongo_data:
+  minio_data:
+  kafka_data:
+  grafana_data:
+  loki_data:
+
+services:
+
+  # ===========================================================================
+  # INFRASTRUCTURE — profile: core
+  # ===========================================================================
+
+  # --- Kafka (KRaft, single broker for local dev) ---
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    profiles: [core, app, sim]
+    hostname: kafka
+    container_name: fp-kafka
+    networks: [fleetnet]
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      CLUSTER_ID: "fleetpulse-local-cluster"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      <<: *hc-defaults
+
+  # --- Schema Registry ---
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.1
+    profiles: [core, app, sim]
+    hostname: schema-registry
+    container_name: fp-schema-registry
+    networks: [fleetnet]
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      <<: *hc-defaults
+
+  # --- PostgreSQL 16 + PostGIS ---
+  postgres:
+    image: postgis/postgis:16-3.4
+    profiles: [core, app]
+    hostname: postgres
+    container_name: fp-postgres
+    networks: [fleetnet]
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: fleetpulse
+      POSTGRES_USER: fleetpulse
+      POSTGRES_PASSWORD: fleetpulse_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fleetpulse -d fleetpulse"]
+      <<: *hc-defaults
+
+  # --- ClickHouse ---
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    profiles: [core, app]
+    hostname: clickhouse
+    container_name: fp-clickhouse
+    networks: [fleetnet]
+    ports:
+      - "8123:8123"   # HTTP
+      - "9000:9000"   # Native TCP
+    environment:
+      CLICKHOUSE_DB: fleetpulse
+      CLICKHOUSE_USER: fleetpulse
+      CLICKHOUSE_PASSWORD: fleetpulse_dev
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./migrations/clickhouse:/docker-entrypoint-initdb.d:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      <<: *hc-defaults
+
+  # --- Redis ---
+  redis:
+    image: redis:7.2-alpine
+    profiles: [core, app]
+    hostname: redis
+    container_name: fp-redis
+    networks: [fleetnet]
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *hc-defaults
+
+  # --- MongoDB ---
+  mongo:
+    image: mongo:7.0
+    profiles: [core, app]
+    hostname: mongo
+    container_name: fp-mongo
+    networks: [fleetnet]
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: fleetpulse
+      MONGO_INITDB_ROOT_PASSWORD: fleetpulse_dev
+      MONGO_INITDB_DATABASE: fleetpulse
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      <<: *hc-defaults
+
+  # --- MinIO (S3-compatible object store) ---
+  minio:
+    image: minio/minio:RELEASE.2024-03-21T23-13-43Z
+    profiles: [core, app]
+    hostname: minio
+    container_name: fp-minio
+    networks: [fleetnet]
+    ports:
+      - "9001:9001"   # Web console
+      - "9002:9002"   # API
+    environment:
+      MINIO_ROOT_USER: fleetpulse
+      MINIO_ROOT_PASSWORD: fleetpulse_dev
+      MINIO_CONSOLE_ADDRESS: ":9001"
+    command: server /data --address ":9002"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9002/minio/health/live"]
+      <<: *hc-defaults
+
+  # --- MinIO bucket initializer ---
+  minio-init:
+    image: minio/mc:RELEASE.2024-03-20T21-25-52Z
+    profiles: [core, app]
+    networks: [fleetnet]
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9002 fleetpulse fleetpulse_dev;
+      mc mb --ignore-existing local/fleetpulse-archive;
+      mc mb --ignore-existing local/fleetpulse-test;
+      echo 'MinIO buckets ready';
+      "
+    restart: "no"
+
+  # --- Kafka topic initializer ---
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    profiles: [core, app, sim]
+    networks: [fleetnet]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./migrations/kafka-topics:/scripts:ro
+    entrypoint: ["/bin/bash", "/scripts/create-topics.sh"]
+    restart: "no"
+
+  # ===========================================================================
+  # APPLICATION SERVICES — profile: app
+  # ===========================================================================
+
+  # --- Ingestion Gateway (Spring Boot) ---
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    profiles: [app]
+    hostname: gateway
+    container_name: fp-gateway
+    networks: [fleetnet]
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *common-env
+      SPRING_PROFILES_ACTIVE: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      <<: *hc-defaults
+
+  # --- Normalizer (Spring Boot) ---
+  normalizer:
+    build:
+      context: ./services/normalizer
+      dockerfile: Dockerfile
+    profiles: [app]
+    hostname: normalizer
+    container_name: fp-normalizer
+    networks: [fleetnet]
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *common-env
+      SPRING_PROFILES_ACTIVE: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/fleetpulse
+      POSTGRES_USER: fleetpulse
+      POSTGRES_PASSWORD: fleetpulse_dev
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MONGO_URI: mongodb://fleetpulse:fleetpulse_dev@mongo:27017/fleetpulse
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/healthz"]
+      <<: *hc-defaults
+
+  # --- Orderer (Spring Boot) ---
+  orderer:
+    build:
+      context: ./services/orderer
+      dockerfile: Dockerfile
+    profiles: [app]
+    hostname: orderer
+    container_name: fp-orderer
+    networks: [fleetnet]
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *common-env
+      SPRING_PROFILES_ACTIVE: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/healthz"]
+      <<: *hc-defaults
+
+  # --- Stream Engine - Fast Path (Spring Boot) ---
+  stream-engine-fast:
+    build:
+      context: ./services/stream-engine
+      dockerfile: Dockerfile
+    profiles: [app]
+    hostname: stream-engine-fast
+    container_name: fp-stream-fast
+    networks: [fleetnet]
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *common-env
+      SPRING_PROFILES_ACTIVE: docker
+      PROCESSOR: fast
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # --- Telemetry Sink (Spring Boot → ClickHouse) ---
+  telemetry-sink:
+    build:
+      context: ./services/telemetry-sink
+      dockerfile: Dockerfile
+    profiles: [app]
+    hostname: telemetry-sink
+    container_name: fp-telemetry-sink
+    networks: [fleetnet]
+    ports:
+      - "8086:8086"
+    environment:
+      <<: *common-env
+      SPRING_PROFILES_ACTIVE: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: fleetpulse
+      CLICKHOUSE_PASSWORD: fleetpulse_dev
+    depends_on:
+      kafka:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+
+  # --- Insight Sink (Spring Boot → Postgres + Mongo) ---
+  insight-sink:
+    build:
+      context: ./services/insight-sink
+      dockerfile: Dockerfile
+    profiles: [app]
+    hostname: insight-sink
+    container_name: fp-insight-sink
+    networks: [fleetnet]
+    ports:
+      - "8087:8087"
+    environment:
+      <<: *common-env
+      SPRING_PROFILES_ACTIVE: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/fleetpulse
+      POSTGRES_USER: fleetpulse
+      POSTGRES_PASSWORD: fleetpulse_dev
+      MONGO_URI: mongodb://fleetpulse:fleetpulse_dev@mongo:27017/fleetpulse
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+  # --- Query API (FastAPI Python) ---
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    profiles: [app]
+    hostname: api
+    container_name: fp-api
+    networks: [fleetnet]
+    ports:
+      - "8000:8000"
+    environment:
+      <<: *common-env
+      POSTGRES_DSN: postgresql+asyncpg://fleetpulse:fleetpulse_dev@postgres:5432/fleetpulse
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: fleetpulse
+      CLICKHOUSE_PASSWORD: fleetpulse_dev
+      REDIS_URL: redis://redis:6379/0
+      MONGO_URI: mongodb://fleetpulse:fleetpulse_dev@mongo:27017/fleetpulse
+    volumes:
+      - ./config:/app/config:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      <<: *hc-defaults
+
+  # --- Archiver Service (Python + PyArrow Parquet) ---
+  archiver:
+    build:
+      context: .
+      dockerfile: services/archiver/Dockerfile
+    profiles: [app]
+    hostname: archiver
+    container_name: fp-archiver
+    networks: [fleetnet]
+    environment:
+      <<: *common-env
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC_CLEAN: telemetry.clean.v1
+      ARCHIVE_DIR: /data/archive
+    volumes:
+      - ./data/archive:/data/archive
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # --- Web UI (Nginx + Leaflet Dashboard) ---
+  web:
+    build:
+      context: .
+      dockerfile: services/web/Dockerfile
+    profiles: [app]
+    hostname: web
+    container_name: fp-web
+    networks: [fleetnet]
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+  # ===========================================================================
+  # SIMULATOR — profile: sim
+  # ===========================================================================
+  simulator:
+    build:
+      context: ./services/simulator
+      dockerfile: Dockerfile
+    profiles: [sim]
+    hostname: simulator
+    container_name: fp-simulator
+    networks: [fleetnet]
+    ports:
+      - "8090:8090"  # control API
+    environment:
+      <<: *common-env
+      GATEWAY_URL: http://gateway:8080
+      SCENARIO_FILE: /app/config/scenarios/dev.yaml
+    volumes:
+      - ./config:/app/config:ro
+      - ./data/seed:/app/data/seed
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+  # ===========================================================================
+  # OBSERVABILITY — profile: obs
+  # ===========================================================================
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    profiles: [obs]
+    hostname: prometheus
+    container_name: fp-prometheus
+    networks: [fleetnet]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    profiles: [obs]
+    hostname: grafana
+    container_name: fp-grafana
+    networks: [fleetnet]
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus

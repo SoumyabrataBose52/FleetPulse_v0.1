@@ -1,0 +1,45 @@
+{
+  "type": "record",
+  "name": "ErasureCommand",
+  "namespace": "com.fleetpulse.commands.erasure.v1",
+  "doc": "Privacy right-to-erasure broadcast command (§4.3, §5.3, §8.S3) published to commands.erasure.v1",
+  "fields": [
+    {
+      "name": "command_id",
+      "type": "string",
+      "doc": "Unique command dispatch UUID"
+    },
+    {
+      "name": "request_id",
+      "type": "string",
+      "doc": "Parent erasure request UUID in Postgres"
+    },
+    {
+      "name": "subject_type",
+      "type": {
+        "type": "enum",
+        "name": "ErasureSubjectType",
+        "symbols": ["VEHICLE", "DRIVER"]
+      },
+      "doc": "Data subject classification"
+    },
+    {
+      "name": "subject_id",
+      "type": "string",
+      "doc": "Target vehicle_pid or driver_id to purge"
+    },
+    {
+      "name": "tenant_id",
+      "type": "int",
+      "doc": "Tenant ID owning the subject"
+    },
+    {
+      "name": "ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Command issue timestamp in UTC ms"
+    }
+  ]
+}

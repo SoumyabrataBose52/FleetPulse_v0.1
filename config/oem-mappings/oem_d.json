@@ -1,0 +1,54 @@
+{
+  "oem": "D",
+  "schema_ver": 1,
+  "format": "delimited",
+  "delimiter": "|",
+  "description": "Draco OEM format: Pipe-delimited positional string, scaled integers (§5.2)",
+  "vin_field": "1",
+  "fields": {
+    "ts_event": {
+      "source": "2",
+      "required": true,
+      "transform": "direct"
+    },
+    "lat_e6": {
+      "source": "3",
+      "transform": "scale",
+      "factor": 10
+    },
+    "lon_e6": {
+      "source": "4",
+      "transform": "scale",
+      "factor": 10
+    },
+    "speed_kmh": {
+      "source": "5",
+      "transform": "scale",
+      "factor": 0.1
+    },
+    "odo_km": {
+      "source": "6",
+      "transform": "scale",
+      "factor": 0.1
+    },
+    "ignition": {
+      "source": "7",
+      "transform": "enum_map",
+      "mapping": {
+        "1": true,
+        "0": false
+      }
+    },
+    "fuel_pct": {
+      "source": "8",
+      "transform": "scale",
+      "factor": 0.1
+    },
+    "dtc": {
+      "source": "9",
+      "transform": "split_list",
+      "separator": ",",
+      "default": []
+    }
+  }
+}

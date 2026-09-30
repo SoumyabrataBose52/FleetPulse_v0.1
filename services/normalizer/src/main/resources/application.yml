@@ -1,0 +1,49 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: normalizer
+  threads:
+    virtual:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: fleetpulse-normalizer
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+
+normalizer:
+  kafka:
+    raw-topic: ${TOPIC_RAW_TELEMETRY:raw.telemetry}
+    canonical-topic: ${TOPIC_CANONICAL_TELEMETRY:telemetry.canonical.v1}
+    dlq-topic: ${TOPIC_DLQ:telemetry.dlq}
+    mappings-topic: ${TOPIC_OEM_MAPPINGS:config.oem-mappings}
+  mappings-dir: ${FP_MAPPINGS_DIR:../../config/oem-mappings}
+  seed-vehicles-path: ${FP_SEED_VEHICLES_PATH:../../data/seed/vehicles.csv}
+  strict-vin: false
+  cache:
+    max-size: 150000
+    expire-after-write-minutes: 60

@@ -1,0 +1,48 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: telemetry-sink
+  threads:
+    virtual:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: telemetry-sink-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 5000
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+      type: BATCH
+
+clickhouse:
+  url: ${CLICKHOUSE_URL:http://localhost:8123}
+  database: ${CLICKHOUSE_DB:fleetpulse}
+  table: ${CLICKHOUSE_TABLE:telemetry}
+  user: ${CLICKHOUSE_USER:fleetpulse}
+  password: ${CLICKHOUSE_PASSWORD:fleetpulse_dev}
+  dedup-enabled: ${CLICKHOUSE_DEDUP_ENABLED:true}
+  connect-timeout-ms: 3000
+  socket-timeout-ms: 10000
+
+fleetpulse:
+  sink:
+    batch-max-size: ${BATCH_MAX_SIZE:5000}
+    flush-timeout-ms: ${BATCH_FLUSH_TIMEOUT_MS:500}
+    topics:
+      clean: ${KAFKA_TOPIC_CLEAN:telemetry.clean.v1}
+      late: ${KAFKA_TOPIC_LATE:telemetry.late.v1}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always

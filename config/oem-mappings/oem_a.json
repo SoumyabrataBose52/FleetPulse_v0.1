@@ -1,0 +1,65 @@
+{
+  "oem": "A",
+  "schema_ver": 1,
+  "format": "json",
+  "description": "Astra OEM format: JSON camelCase, ISO-8601 time, metric units (§5.2)",
+  "vin_field": "vehicleId",
+  "fields": {
+    "ts_event": {
+      "source": "timestamp",
+      "required": true,
+      "transform": "iso8601_to_ms"
+    },
+    "seq": {
+      "source": "msgSeq",
+      "transform": "direct"
+    },
+    "lat_e6": {
+      "source": "position.latitude",
+      "transform": "scale",
+      "factor": 1000000
+    },
+    "lon_e6": {
+      "source": "position.longitude",
+      "transform": "scale",
+      "factor": 1000000
+    },
+    "heading_deg": {
+      "source": "position.headingDeg",
+      "transform": "direct"
+    },
+    "speed_kmh": {
+      "source": "speedKph",
+      "transform": "direct"
+    },
+    "odo_km": {
+      "source": "odometerKm",
+      "transform": "direct"
+    },
+    "ignition": {
+      "source": "ignition",
+      "transform": "enum_map",
+      "mapping": {
+        "ON": true,
+        "OFF": false,
+        "true": true,
+        "false": false,
+        "1": true,
+        "0": false
+      }
+    },
+    "fuel_pct": {
+      "source": "fuelLevelPct",
+      "transform": "direct"
+    },
+    "dtc": {
+      "source": "dtcList",
+      "transform": "direct",
+      "default": []
+    },
+    "evt": {
+      "source": "event",
+      "transform": "direct"
+    }
+  }
+}

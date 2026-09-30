@@ -1,0 +1,62 @@
+# Secrets
+.env
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node / React
+node_modules/
+dist/
+.next/
+.cache/
+
+# Docker
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (large files — use git-lfs or checksums)
+data/seed/*.csv
+data/seed/*.parquet
+!data/seed/.gitkeep
+
+# Evidence (large files — store externally or as CI artifacts)
+docs/evidence/*.mp4
+docs/evidence/*.png

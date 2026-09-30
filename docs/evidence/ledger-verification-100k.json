@@ -1,0 +1,12 @@
+{
+  "status": "PASSED",
+  "metric": "ZERO_DATA_LOSS",
+  "total_logical_events": 100000,
+  "total_unique_landed": 100000,
+  "total_duplicates_filtered": 15000,
+  "total_loss_count": 0,
+  "accounting_loss_pct": 0.0,
+  "verification_duration_seconds": 0.289,
+  "discrepant_buckets": 0,
+  "timestamp": "2026-09-30T22:56:11Z"
+}

@@ -1,0 +1,123 @@
+{
+  "type": "record",
+  "name": "TripEvent",
+  "namespace": "com.fleetpulse.events.trip.v1",
+  "doc": "Trip completion/segmentation event (§5.3, §7.8, §8.M2) published to events.trip.v1",
+  "fields": [
+    {
+      "name": "trip_id",
+      "type": "string",
+      "doc": "Deterministic ID: hash(vehicle_pid, start_ts)"
+    },
+    {
+      "name": "vehicle_pid",
+      "type": "string",
+      "doc": "Pseudonymous vehicle UUID"
+    },
+    {
+      "name": "tenant_id",
+      "type": "int",
+      "doc": "Tenant ID"
+    },
+    {
+      "name": "driver_id",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Assigned driver ID at trip start"
+    },
+    {
+      "name": "start_ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Trip start timestamp UTC ms"
+    },
+    {
+      "name": "end_ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Trip end timestamp UTC ms"
+    },
+    {
+      "name": "start_lat_e6",
+      "type": "int",
+      "doc": "Start latitude micro-degrees"
+    },
+    {
+      "name": "start_lon_e6",
+      "type": "int",
+      "doc": "Start longitude micro-degrees"
+    },
+    {
+      "name": "start_geohash7",
+      "type": "string",
+      "doc": "Start location geohash precision 7"
+    },
+    {
+      "name": "end_lat_e6",
+      "type": "int",
+      "doc": "End latitude micro-degrees"
+    },
+    {
+      "name": "end_lon_e6",
+      "type": "int",
+      "doc": "End longitude micro-degrees"
+    },
+    {
+      "name": "end_geohash7",
+      "type": "string",
+      "doc": "End location geohash precision 7"
+    },
+    {
+      "name": "distance_km",
+      "type": "double",
+      "doc": "Total trip distance in km"
+    },
+    {
+      "name": "duration_s",
+      "type": "int",
+      "doc": "Trip total duration in seconds"
+    },
+    {
+      "name": "idle_s",
+      "type": "int",
+      "doc": "Trip stopped/idling duration in seconds"
+    },
+    {
+      "name": "energy_kwh",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Traction energy consumed in kWh (EV/hybrid)"
+    },
+    {
+      "name": "fuel_l",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Fuel consumed in Liters (ICE/hybrid)"
+    },
+    {
+      "name": "cost",
+      "type": "double",
+      "doc": "Total trip energy/fuel cost"
+    },
+    {
+      "name": "co2_kg",
+      "type": "double",
+      "default": 0.0,
+      "doc": "Estimated CO2 emissions in kg"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "TripStatus",
+        "symbols": ["COMPLETED", "TRUNCATED", "IN_PROGRESS"]
+      },
+      "default": "COMPLETED",
+      "doc": "Final trip segmentation status"
+    }
+  ]
+}

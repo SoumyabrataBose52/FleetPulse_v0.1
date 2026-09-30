@@ -1,0 +1,162 @@
+{
+  "oem_a": {
+    "oem": "A",
+    "schema_ver": 1,
+    "raw": {
+      "vehicleId": "1HGCR2F83HA000001",
+      "timestamp": "2026-09-25T10:15:02.120Z",
+      "position": {
+        "latitude": 13.0827,
+        "longitude": 80.2707,
+        "headingDeg": 92
+      },
+      "speedKph": 64.2,
+      "odometerKm": 18234.7,
+      "ignition": "ON",
+      "fuelLevelPct": 61.5,
+      "dtcList": ["P0301"],
+      "event": "HARSH_BRAKE",
+      "msgSeq": 88412
+    },
+    "expected": {
+      "vin": "1HGCR2F83HA000001",
+      "ts_event": 1790331302120,
+      "lat_e6": 13082700,
+      "lon_e6": 80270700,
+      "heading_deg": 92,
+      "speed_kmh": 64.2,
+      "odo_km": 18234.7,
+      "ignition": true,
+      "fuel_pct": 61.5,
+      "dtc": ["P0301"],
+      "evt": "HARSH_BRAKE",
+      "seq": 88412
+    }
+  },
+  "oem_b": {
+    "oem": "B",
+    "schema_ver": 1,
+    "raw": {
+      "vin": "1HGCR2F83HA000001",
+      "ts_epoch": 1790331302.12,
+      "gps": {
+        "lat": 13.0827,
+        "lng": 80.2707,
+        "hdg": 92
+      },
+      "speed_mph": 39.892,
+      "odo_mi": 11330.525,
+      "ign": 1,
+      "fuel_frac": 0.615,
+      "trouble_codes": "P0301;P0420",
+      "evt_code": "HB",
+      "counter": 88412
+    },
+    "expected": {
+      "vin": "1HGCR2F83HA000001",
+      "ts_event": 1790331302120,
+      "lat_e6": 13082700,
+      "lon_e6": 80270700,
+      "heading_deg": 92,
+      "speed_kmh": 64.2,
+      "odo_km": 18234.7,
+      "ignition": true,
+      "fuel_pct": 61.5,
+      "dtc": ["P0301", "P0420"],
+      "evt": "HARSH_BRAKE",
+      "seq": 88412
+    }
+  },
+  "oem_c": {
+    "oem": "C",
+    "schema_ver": 1,
+    "raw": {
+      "deviceId": "1HGCR2F83HA000001",
+      "tsMs": 1790331302120,
+      "signals": [
+        {"n": "SPD", "v": 64.2},
+        {"n": "SOC", "v": 0.41},
+        {"n": "ODO", "v": 18234700},
+        {"n": "LAT", "v": 13.0827},
+        {"n": "LON", "v": 80.2707},
+        {"n": "CHG_KW", "v": 0.0}
+      ],
+      "flags": ["HB"]
+    },
+    "expected": {
+      "vin": "1HGCR2F83HA000001",
+      "ts_event": 1790331302120,
+      "lat_e6": 13082700,
+      "lon_e6": 80270700,
+      "speed_kmh": 64.2,
+      "soc_pct": 41.0,
+      "odo_km": 18234.7,
+      "charge_kw": 0.0,
+      "evt": "HARSH_BRAKE"
+    }
+  },
+  "oem_d": {
+    "oem": "D",
+    "schema_ver": 1,
+    "raw": "D1|1HGCR2F83HA000001|1790331302120|1308270|8027070|642|182347|1|615|P0301,P0420",
+    "expected": {
+      "vin": "1HGCR2F83HA000001",
+      "ts_event": 1790331302120,
+      "lat_e6": 13082700,
+      "lon_e6": 80270700,
+      "speed_kmh": 64.2,
+      "odo_km": 18234.7,
+      "ignition": true,
+      "fuel_pct": 61.5,
+      "dtc": ["P0301", "P0420"]
+    }
+  },
+  "oem_e_v1": {
+    "oem": "E",
+    "schema_ver": 1,
+    "raw": {
+      "v": 1,
+      "vin": "1HGCR2F83HA000001",
+      "t": "2026-09-25T10:15:02.120Z",
+      "lat": 13.0827,
+      "lon": 80.2707,
+      "spd": 64.2,
+      "soc": 41.0
+    },
+    "expected": {
+      "vin": "1HGCR2F83HA000001",
+      "ts_event": 1790331302120,
+      "lat_e6": 13082700,
+      "lon_e6": 80270700,
+      "speed_kmh": 64.2,
+      "soc_pct": 41.0
+    }
+  },
+  "oem_e_v2": {
+    "oem": "E",
+    "schema_ver": 2,
+    "raw": {
+      "v": 2,
+      "vin": "1HGCR2F83HA000001",
+      "t": "2026-09-25T10:15:02.120Z",
+      "loc": [80.2707, 13.0827],
+      "spd_ms": 17.833333333333332,
+      "batt": {
+        "soc": 0.41,
+        "volt": 372.4,
+        "kw": -12.3
+      }
+    },
+    "expected": {
+      "vin": "1HGCR2F83HA000001",
+      "ts_event": 1790331302120,
+      "lat_e6": 13082700,
+      "lon_e6": 80270700,
+      "speed_kmh": 64.2,
+      "soc_pct": 41.0,
+      "batt_voltage_v": 372.4,
+      "charge_kw": 12.3,
+      "charge_state": "CHARGING"
+    }
+  }
+}

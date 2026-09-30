@@ -1,0 +1,32 @@
+{
+  "oem": "E",
+  "schema_ver": 1,
+  "format": "json",
+  "description": "Echo OEM format v1: Simple JSON, ISO-8601 time, flat coordinates (§5.2)",
+  "vin_field": "vin",
+  "fields": {
+    "ts_event": {
+      "source": "t",
+      "required": true,
+      "transform": "iso8601_to_ms"
+    },
+    "lat_e6": {
+      "source": "lat",
+      "transform": "scale",
+      "factor": 1000000
+    },
+    "lon_e6": {
+      "source": "lon",
+      "transform": "scale",
+      "factor": 1000000
+    },
+    "speed_kmh": {
+      "source": "spd",
+      "transform": "direct"
+    },
+    "soc_pct": {
+      "source": "soc",
+      "transform": "direct"
+    }
+  }
+}
