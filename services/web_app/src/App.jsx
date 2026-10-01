@@ -3,7 +3,7 @@ import L from "leaflet";
 import {
   Radio, Zap, Navigation, AlertTriangle, Award, Shield, Lock, Database,
   RefreshCw, X, BatteryCharging, Clock, DollarSign, CheckCircle2, Car,
-  TrendingDown, Activity, Wifi, Compass
+  TrendingDown, Activity, Wifi, Compass, ChevronDown, Building2, Search, Check, Layers
 } from "lucide-react";
 import "./index.css";
 
@@ -20,13 +20,49 @@ const METRO_HUBS = [
   { name: "Pune Hub", code: "PNQ", lat: 18.5204, lon: 73.8567, zoom: 11, count: "3.4k" },
 ];
 
+/* Complete 40 Tenants Directory Zipf-Distributed (Total: Exactly 100,000 Vehicles) */
 const TENANT_DIRECTORY = [
-  { id: 0, name: "All Tenants", fleet: 100000, baseActive: 98420, archetype: "Global Mixed Fleet" },
-  { id: 1, name: "Enterprise T01", fleet: 16543, baseActive: 16280, archetype: "Last-Mile Delivery" },
-  { id: 2, name: "Enterprise T02", fleet: 9501, baseActive: 9345, archetype: "Ride-Hail Mobility" },
-  { id: 3, name: "Enterprise T03", fleet: 6869, baseActive: 6750, archetype: "Logistics Haul" },
-  { id: 4, name: "Enterprise T04", fleet: 5457, baseActive: 5360, archetype: "Staff Transport" },
-  { id: 5, name: "Enterprise T05", fleet: 4565, baseActive: 4490, archetype: "Field Services" },
+  { id: 0,  name: "All Tenants",     fleet: 100000, baseActive: 98420, archetype: "All 40 Enterprise Fleets" },
+  { id: 1,  name: "Enterprise T01",  fleet: 16543,  baseActive: 16278, archetype: "Last Mile Delivery" },
+  { id: 2,  name: "Enterprise T02",  fleet: 9501,   baseActive: 9349,  archetype: "Ride Hail" },
+  { id: 3,  name: "Enterprise T03",  fleet: 6869,   baseActive: 6759,  archetype: "Logistics Haul" },
+  { id: 4,  name: "Enterprise T04",  fleet: 5457,   baseActive: 5370,  archetype: "Staff Transport" },
+  { id: 5,  name: "Enterprise T05",  fleet: 4565,   baseActive: 4492,  archetype: "Field Service" },
+  { id: 6,  name: "Enterprise T06",  fleet: 3945,   baseActive: 3882,  archetype: "Last Mile Delivery" },
+  { id: 7,  name: "Enterprise T07",  fleet: 3488,   baseActive: 3432,  archetype: "Ride Hail" },
+  { id: 8,  name: "Enterprise T08",  fleet: 3134,   baseActive: 3084,  archetype: "Logistics Haul" },
+  { id: 9,  name: "Enterprise T09",  fleet: 2852,   baseActive: 2806,  archetype: "Staff Transport" },
+  { id: 10, name: "Enterprise T10",  fleet: 2622,   baseActive: 2580,  archetype: "Field Service" },
+  { id: 11, name: "Enterprise T11",  fleet: 2429,   baseActive: 2390,  archetype: "Last Mile Delivery" },
+  { id: 12, name: "Enterprise T12",  fleet: 2266,   baseActive: 2230,  archetype: "Ride Hail" },
+  { id: 13, name: "Enterprise T13",  fleet: 2125,   baseActive: 2091,  archetype: "Logistics Haul" },
+  { id: 14, name: "Enterprise T14",  fleet: 2003,   baseActive: 1971,  archetype: "Staff Transport" },
+  { id: 15, name: "Enterprise T15",  fleet: 1896,   baseActive: 1866,  archetype: "Field Service" },
+  { id: 16, name: "Enterprise T16",  fleet: 1800,   baseActive: 1771,  archetype: "Last Mile Delivery" },
+  { id: 17, name: "Enterprise T17",  fleet: 1715,   baseActive: 1688,  archetype: "Ride Hail" },
+  { id: 18, name: "Enterprise T18",  fleet: 1638,   baseActive: 1612,  archetype: "Logistics Haul" },
+  { id: 19, name: "Enterprise T19",  fleet: 1569,   baseActive: 1544,  archetype: "Staff Transport" },
+  { id: 20, name: "Enterprise T20",  fleet: 1506,   baseActive: 1482,  archetype: "Field Service" },
+  { id: 21, name: "Enterprise T21",  fleet: 1448,   baseActive: 1425,  archetype: "Last Mile Delivery" },
+  { id: 22, name: "Enterprise T22",  fleet: 1395,   baseActive: 1373,  archetype: "Ride Hail" },
+  { id: 23, name: "Enterprise T23",  fleet: 1347,   baseActive: 1325,  archetype: "Logistics Haul" },
+  { id: 24, name: "Enterprise T24",  fleet: 1301,   baseActive: 1280,  archetype: "Staff Transport" },
+  { id: 25, name: "Enterprise T25",  fleet: 1260,   baseActive: 1240,  archetype: "Field Service" },
+  { id: 26, name: "Enterprise T26",  fleet: 1221,   baseActive: 1201,  archetype: "Last Mile Delivery" },
+  { id: 27, name: "Enterprise T27",  fleet: 1184,   baseActive: 1165,  archetype: "Ride Hail" },
+  { id: 28, name: "Enterprise T28",  fleet: 1150,   baseActive: 1132,  archetype: "Logistics Haul" },
+  { id: 29, name: "Enterprise T29",  fleet: 1119,   baseActive: 1101,  archetype: "Staff Transport" },
+  { id: 30, name: "Enterprise T30",  fleet: 1089,   baseActive: 1072,  archetype: "Field Service" },
+  { id: 31, name: "Enterprise T31",  fleet: 1061,   baseActive: 1044,  archetype: "Last Mile Delivery" },
+  { id: 32, name: "Enterprise T32",  fleet: 1034,   baseActive: 1017,  archetype: "Ride Hail" },
+  { id: 33, name: "Enterprise T33",  fleet: 1009,   baseActive: 993,   archetype: "Logistics Haul" },
+  { id: 34, name: "Enterprise T34",  fleet: 985,    baseActive: 969,   archetype: "Staff Transport" },
+  { id: 35, name: "Enterprise T35",  fleet: 962,    baseActive: 947,   archetype: "Field Service" },
+  { id: 36, name: "Enterprise T36",  fleet: 941,    baseActive: 926,   archetype: "Last Mile Delivery" },
+  { id: 37, name: "Enterprise T37",  fleet: 921,    baseActive: 906,   archetype: "Ride Hail" },
+  { id: 38, name: "Enterprise T38",  fleet: 901,    baseActive: 887,   archetype: "Logistics Haul" },
+  { id: 39, name: "Enterprise T39",  fleet: 883,    baseActive: 869,   archetype: "Staff Transport" },
+  { id: 40, name: "Enterprise T40",  fleet: 866,    baseActive: 852,   archetype: "Field Service" },
 ];
 
 const NAV_TABS = [
@@ -80,9 +116,36 @@ export default function App() {
   const isSwitchingTabRef = useRef(false);
   const activeTabRef = useRef(activeTab);
 
+  /* tenant custom dropdown state */
+  const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
+  const [tenantSearch,       setTenantSearch]       = useState("");
+  const [archetypeFilter,    setArchetypeFilter]    = useState("ALL");
+  const tenantDropdownRef                           = useRef(null);
+
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (tenantDropdownRef.current && !tenantDropdownRef.current.contains(e.target)) {
+        setTenantDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredTenants = TENANT_DIRECTORY.filter(t => {
+    const matchesArch = archetypeFilter === "ALL" || t.archetype.toLowerCase().includes(archetypeFilter.toLowerCase());
+    const query = tenantSearch.trim().toLowerCase();
+    const matchesSearch = !query ||
+      t.name.toLowerCase().includes(query) ||
+      t.archetype.toLowerCase().includes(query) ||
+      `t${t.id}`.includes(query) ||
+      `t${String(t.id).padStart(2, "0")}`.includes(query);
+    return matchesArch && matchesSearch;
+  });
 
   /* DP optimizer */
   const [dpPid,     setDpPid]     = useState("00000000-0000-0000-0000-000000000001");
@@ -416,18 +479,114 @@ export default function App() {
             Grid: <strong>{gridMw} MW</strong>
           </div>
 
-          {/* tenant selector */}
-          <div className="fp-tenant-wrap">
-            <div className="fp-segmented">
-              {[{ id: 0, label: "All" }, { id: 1, label: "T1" }, { id: 2, label: "T2" }, { id: 3, label: "T3" }].map(t => (
-                <button key={t.id} className={`fp-seg-btn${tenantId === t.id ? " active" : ""}`} onClick={() => setTenantId(t.id)}>{t.label}</button>
-              ))}
-            </div>
-            <select className="fp-tenant-select" value={tenantId} onChange={e => setTenantId(+e.target.value)}>
-              {TENANT_DIRECTORY.map(t => (
-                <option key={t.id} value={t.id}>{t.id === 0 ? "All Tenants (100K)" : `${t.name} · ${t.archetype} (${fmt(t.fleet)})`}</option>
-              ))}
-            </select>
+          {/* Flighty-styled Tenant Selector Custom Dropdown */}
+          <div className="fp-tenant-dropdown-container" ref={tenantDropdownRef}>
+            <button
+              className={`fp-tenant-trigger${tenantDropdownOpen ? " open" : ""}`}
+              onClick={() => setTenantDropdownOpen(prev => !prev)}
+              aria-expanded={tenantDropdownOpen}
+              aria-haspopup="listbox"
+              type="button"
+            >
+              <Building2 size={13} className="fp-tenant-trigger-icon" />
+              <div className="fp-tenant-trigger-info">
+                <span className="fp-tenant-trigger-name">{tenant.name}</span>
+                <span className="fp-tenant-trigger-archetype">· {tenant.archetype}</span>
+              </div>
+              <span className="fp-tenant-trigger-badge">{fmt(tenant.fleet)}</span>
+              <ChevronDown size={13} className={`fp-tenant-chevron${tenantDropdownOpen ? " rotate" : ""}`} />
+            </button>
+
+            {tenantDropdownOpen && (
+              <div className="fp-tenant-popover" role="listbox">
+                {/* Search Header */}
+                <div className="fp-tenant-search-wrap">
+                  <Search size={14} className="fp-tenant-search-icon" />
+                  <input
+                    type="text"
+                    className="fp-tenant-search-input"
+                    placeholder="Search 40 enterprise tenants or archetypes…"
+                    value={tenantSearch}
+                    onChange={e => setTenantSearch(e.target.value)}
+                    autoFocus
+                  />
+                  {tenantSearch && (
+                    <button className="fp-tenant-clear-btn" onClick={() => setTenantSearch("")} type="button">
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter Pills */}
+                <div className="fp-tenant-filter-pills">
+                  {[
+                    { id: "ALL", label: "All 40" },
+                    { id: "Last Mile", label: "Last Mile (8)" },
+                    { id: "Ride Hail", label: "Ride Hail (8)" },
+                    { id: "Logistics", label: "Logistics (8)" },
+                    { id: "Staff", label: "Staff (8)" },
+                    { id: "Field", label: "Field (8)" },
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      className={`fp-tenant-pill${archetypeFilter === f.id ? " active" : ""}`}
+                      onClick={() => setArchetypeFilter(f.id)}
+                      type="button"
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Scrollable List */}
+                <div className="fp-tenant-list">
+                  {filteredTenants.length === 0 ? (
+                    <div className="fp-tenant-empty">No tenants matching "{tenantSearch}"</div>
+                  ) : (
+                    filteredTenants.map(t => {
+                      const isSelected = tenantId === t.id;
+                      return (
+                        <div
+                          key={t.id}
+                          className={`fp-tenant-item${isSelected ? " active" : ""}`}
+                          onClick={() => {
+                            setTenantId(t.id);
+                            setTenantDropdownOpen(false);
+                            setTenantSearch("");
+                          }}
+                          role="option"
+                          aria-selected={isSelected}
+                        >
+                          <div className="fp-tenant-item-left">
+                            <div className="fp-tenant-item-badge">
+                              {t.id === 0 ? "ALL" : `T${String(t.id).padStart(2, "0")}`}
+                            </div>
+                            <div className="fp-tenant-item-details">
+                              <div className="fp-tenant-item-title-row">
+                                <span className="fp-tenant-item-name">{t.name}</span>
+                                <span className="fp-tenant-item-archetype">{t.archetype}</span>
+                              </div>
+                              <div className="fp-tenant-item-meta">
+                                {fmt(t.baseActive)} active · 98.4% online
+                              </div>
+                            </div>
+                          </div>
+                          <div className="fp-tenant-item-right">
+                            <span className="fp-tenant-item-count">{fmt(t.fleet)}</span>
+                            {isSelected && <Check size={14} className="fp-tenant-check" />}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Footer with summary */}
+                <div className="fp-tenant-footer">
+                  <span>40 Tenants · <strong>100,000 Total Connected Vehicles</strong></span>
+                </div>
+              </div>
+            )}
           </div>
 
           <button className="fp-btn-secondary" onClick={loadAll} style={{ padding: "5px 13px", fontSize: "11px" }}>
