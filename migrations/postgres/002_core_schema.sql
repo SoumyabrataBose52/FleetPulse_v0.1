@@ -126,7 +126,7 @@ CREATE TABLE vehicle_model (
   tank_l           NUMERIC(8,2),    -- ICE / hybrid
   idle_burn_lph    NUMERIC(6,3),    -- ICE idle fuel burn L/h
   energy_scale     NUMERIC(4,2) NOT NULL DEFAULT 1.0,
-  mass_kg          INT NOT NULL,
+  mass_kg          NUMERIC(10,2) NOT NULL,
   cda              NUMERIC(6,3) NOT NULL,
   max_dc_kw        NUMERIC(8,2),
   max_ac_kw        NUMERIC(8,2),
@@ -138,7 +138,7 @@ CREATE TABLE vehicle_model (
 -- =============================================================================
 
 CREATE TABLE fleet (
-  fleet_id    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  fleet_id    SERIAL PRIMARY KEY,
   tenant_id   INT NOT NULL REFERENCES tenant(tenant_id),
   name        VARCHAR(255) NOT NULL
 );
@@ -146,7 +146,7 @@ CREATE TABLE fleet (
 CREATE TABLE vehicle (
   vehicle_pid  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   vin          VARCHAR(17) UNIQUE NOT NULL,
-  fleet_id     UUID NOT NULL REFERENCES fleet(fleet_id),
+  fleet_id     INT  NOT NULL REFERENCES fleet(fleet_id),
   tenant_id    INT  NOT NULL REFERENCES tenant(tenant_id),
   model_id     INT  NOT NULL REFERENCES vehicle_model(model_id),
   model_year   SMALLINT NOT NULL,
@@ -156,7 +156,7 @@ CREATE TABLE vehicle (
 );
 
 CREATE TABLE driver (
-  driver_id    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  driver_id    SERIAL PRIMARY KEY,
   tenant_id    INT NOT NULL REFERENCES tenant(tenant_id),
   display_name VARCHAR(255) NOT NULL,  -- synthetic name
   erased_at    TIMESTAMPTZ
@@ -164,7 +164,7 @@ CREATE TABLE driver (
 
 CREATE TABLE vehicle_driver_assignment (
   vehicle_pid   UUID NOT NULL REFERENCES vehicle(vehicle_pid),
-  driver_id     UUID NOT NULL REFERENCES driver(driver_id),
+  driver_id     INT  NOT NULL REFERENCES driver(driver_id),
   valid_from    TIMESTAMPTZ NOT NULL,
   valid_to      TIMESTAMPTZ,
   PRIMARY KEY (vehicle_pid, valid_from)
@@ -176,7 +176,7 @@ CREATE TABLE vehicle_driver_assignment (
 
 CREATE TABLE depot (
   depot_id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  fleet_id          UUID NOT NULL REFERENCES fleet(fleet_id),
+  fleet_id          INT  NOT NULL REFERENCES fleet(fleet_id),
   name              VARCHAR(255) NOT NULL,
   boundary          GEOGRAPHY(Polygon, 4326) NOT NULL,
   site_power_cap_kw NUMERIC(10,2)
@@ -184,7 +184,7 @@ CREATE TABLE depot (
 
 CREATE TABLE geofence (
   geofence_id   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  fleet_id      UUID NOT NULL REFERENCES fleet(fleet_id),
+  fleet_id      INT  NOT NULL REFERENCES fleet(fleet_id),
   type          geofence_type NOT NULL,
   name          VARCHAR(255),
   boundary      GEOGRAPHY(Polygon, 4326) NOT NULL
@@ -244,7 +244,7 @@ CREATE TABLE trip (
   trip_id          UUID NOT NULL,
   vehicle_pid      UUID NOT NULL REFERENCES vehicle(vehicle_pid),
   tenant_id        INT  NOT NULL REFERENCES tenant(tenant_id),
-  driver_id        UUID REFERENCES driver(driver_id),
+  driver_id        INT REFERENCES driver(driver_id),
   start_ts         TIMESTAMPTZ NOT NULL,
   end_ts           TIMESTAMPTZ NOT NULL,
   start_geohash7   VARCHAR(7),

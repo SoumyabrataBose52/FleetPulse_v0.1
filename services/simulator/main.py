@@ -19,8 +19,11 @@ import time
 
 # Ensure project root is in sys.path
 root_dir = str(Path(__file__).resolve().parent.parent.parent)
+fpcore_dir = str(Path(root_dir) / "libs" / "py" / "fpcore")
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
+if fpcore_dir not in sys.path:
+    sys.path.insert(0, fpcore_dir)
 
 from services.simulator.seed import generate_seed_data
 from services.simulator.engine import SimulatorEngine
@@ -61,7 +64,7 @@ def cmd_run(args: argparse.Namespace):
     engine = SimulatorEngine(
         seed=args.seed,
         vehicle_count=args.vehicles,
-        chaos_enabled=True,
+        chaos_enabled=args.chaos,
         emitter=emitter,
     )
 
@@ -104,6 +107,7 @@ def main():
     p_run.add_argument("--out", type=str, default="data/telemetry_out.ndjson", help="Output file for file mode")
     p_run.add_argument("--gateway", type=str, default="http://localhost:8080/v1/ingest/batch", help="Gateway URL for http mode")
     p_run.add_argument("--seed", type=int, default=42, help="PRNG seed")
+    p_run.add_argument("--chaos", action=argparse.BooleanOptionalAction, default=True, help="Enable or disable chaos")
 
     args = parser.parse_args()
 

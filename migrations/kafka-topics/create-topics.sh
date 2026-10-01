@@ -44,6 +44,7 @@ create_topic "events.idle.v1"          16   1209600000
 create_topic "events.safety.v1"        16   1209600000
 create_topic "events.charging.v1"      16   1209600000
 create_topic "events.geofence.v1"      16   1209600000
+create_topic "events.alerts.v1"        16   1209600000
 create_topic "alerts.v1"               16   1209600000
 
 # ---------------------------------------------------------------------------

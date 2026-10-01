@@ -21,6 +21,7 @@ from pathlib import Path
 import random
 import time
 from typing import Dict, List, Optional, Tuple
+from fpcore.vin import build_vin
 
 from services.simulator.world import World
 from services.simulator.physics import PhysicsState, VehicleModelSpecs
@@ -76,11 +77,34 @@ class SimulatorEngine:
         oem_choices = ["A", "B", "C", "D", "E"]
         archetypes = ["LAST_MILE_DELIVERY", "RIDE_HAIL", "LOGISTICS_HAUL", "STAFF_TRANSPORT", "FIELD_SERVICE"]
 
+        # Try loading actual seeded vehicles so PIDs and VINs match registry
+        seed_csv_path = Path("data/seed/vehicles.csv")
+        if not seed_csv_path.exists():
+            seed_csv_path = Path("/app/data/seed/vehicles.csv")
+
+        seeded_records = []
+        if seed_csv_path.exists():
+            with open(seed_csv_path, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for idx, row in enumerate(reader):
+                    if idx >= self.vehicle_count:
+                        break
+                    seeded_records.append(row)
+
         for i in range(self.vehicle_count):
-            v_pid = f"01923f5b-7c6a-7d4e-8f90-{i+1:012x}"
-            vin = f"1HGCR2F8{i%10}A{100000+i:06d}"
-            tenant_id = (i % 40) + 1
-            fleet_id = (tenant_id * 2) - (i % 2)
+            if i < len(seeded_records):
+                row = seeded_records[i]
+                v_pid = row["vehicle_pid"]
+                vin = row["vin"]
+                tenant_id = int(row["tenant_id"])
+                fleet_id = int(row["fleet_id"])
+            else:
+                v_pid = f"01923f5b-7c6a-7d4e-8f90-{i+1:012x}"
+                prefix_16 = f"1HGCR2F8{i%10}A{100000+i:06d}"
+                vin = build_vin(prefix_16)
+                tenant_id = (i % 40) + 1
+                fleet_id = (tenant_id * 2) - (i % 2)
+
             oem = oem_choices[i % len(oem_choices)]
             schema_ver = 2 if (oem == "E" and (i % 2 == 0)) else 1
             arch = archetypes[i % len(archetypes)]

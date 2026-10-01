@@ -36,6 +36,7 @@ target/
 # Node / React
 node_modules/
 dist/
+!services/web_app/dist/
 .next/
 .cache/
 
@@ -56,6 +57,8 @@ Thumbs.db
 data/seed/*.csv
 data/seed/*.parquet
 !data/seed/.gitkeep
+data/archive/
+data/*.ndjson
 
 # Evidence (large files — store externally or as CI artifacts)
 docs/evidence/*.mp4

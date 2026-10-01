@@ -47,6 +47,7 @@ public class NormalizerEngine {
     private final ObjectMapper objectMapper;
     private final boolean strictVin;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public NormalizerEngine(
         MappingRegistry mappingRegistry,
         VehicleRegistry vehicleRegistry,

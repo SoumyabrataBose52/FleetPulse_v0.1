@@ -61,8 +61,14 @@ class ParquetArchiver:
         partitions: Dict[tuple, List[Dict[str, Any]]] = {}
         for ev in events:
             tenant_id = ev.get("tenant_id", 0)
-            ts_ms = ev.get("ts_event", ev.get("ts", 0))
-            dt = datetime.fromtimestamp(ts_ms / 1000.0, tz=timezone.utc)
+            raw_ts = ev.get("ts_event", ev.get("ts", 0))
+            if isinstance(raw_ts, datetime):
+                dt = raw_ts if raw_ts.tzinfo is not None else raw_ts.replace(tzinfo=timezone.utc)
+            elif isinstance(raw_ts, (int, float)):
+                dt = datetime.fromtimestamp(raw_ts / 1000.0, tz=timezone.utc)
+            else:
+                dt = datetime.now(timezone.utc)
+
             date_str = dt.strftime("%Y-%m-%d")
             hour_str = dt.strftime("%H")
 
@@ -73,10 +79,16 @@ class ParquetArchiver:
 
         written_files: List[Path] = []
 
+        def _sort_key(x):
+            v_pid = str(x.get("vehicle_pid", ""))
+            t = x.get("ts_event", x.get("ts", 0))
+            t_num = t.timestamp() if isinstance(t, datetime) else float(t or 0)
+            return (v_pid, t_num)
+
         # 2. Write each partition group
         for (tenant_id, date_str, hour_str), partition_events in partitions.items():
             # Sort partition by (vehicle_pid, ts) for optimal delta/dictionary compression
-            partition_events.sort(key=lambda x: (x.get("vehicle_pid", ""), x.get("ts_event", x.get("ts", 0))))
+            partition_events.sort(key=_sort_key)
 
             # Build PyArrow columnar arrays
             table = self._build_arrow_table(partition_events)
@@ -113,7 +125,14 @@ class ParquetArchiver:
         for r in records:
             cols["tenant_id"].append(r.get("tenant_id"))
             cols["vehicle_pid"].append(r.get("vehicle_pid"))
-            cols["ts"].append(r.get("ts_event", r.get("ts")))
+
+            ts_val = r.get("ts_event", r.get("ts"))
+            if isinstance(ts_val, (int, float)):
+                ts_val = datetime.fromtimestamp(ts_val / 1000.0, tz=timezone.utc)
+            elif isinstance(ts_val, datetime) and ts_val.tzinfo is None:
+                ts_val = ts_val.replace(tzinfo=timezone.utc)
+            cols["ts"].append(ts_val)
+
             cols["event_id"].append(str(r.get("event_id", "")))
             cols["seq"].append(r.get("seq"))
             cols["lat_e6"].append(r.get("lat_e6"))
@@ -132,6 +151,12 @@ class ParquetArchiver:
             cols["dtc"].append(r.get("dtc") if r.get("dtc") is not None else [])
             cols["evt"].append(r.get("evt"))
             cols["quality"].append(r.get("quality", 0))
-            cols["ingest_ts"].append(r.get("ts_ingest", r.get("ingest_ts", r.get("ts_event", 0))))
+
+            ingest_val = r.get("ts_ingest", r.get("ingest_ts", r.get("ts_event", 0)))
+            if isinstance(ingest_val, (int, float)):
+                ingest_val = datetime.fromtimestamp(ingest_val / 1000.0, tz=timezone.utc)
+            elif isinstance(ingest_val, datetime) and ingest_val.tzinfo is None:
+                ingest_val = ingest_val.replace(tzinfo=timezone.utc)
+            cols["ingest_ts"].append(ingest_val)
 
         return pa.Table.from_pydict(cols, schema=PARQUET_TELEMETRY_SCHEMA)

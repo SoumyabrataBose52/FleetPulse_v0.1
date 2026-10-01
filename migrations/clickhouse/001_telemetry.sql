@@ -33,8 +33,7 @@ CREATE TABLE IF NOT EXISTS fleetpulse.telemetry
 ENGINE = ReplacingMergeTree
 PARTITION BY toDate(ts)
 ORDER BY (tenant_id, vehicle_pid, ts, event_id)
-TTL toDateTime(ts) + INTERVAL 7 DAY TO VOLUME 'warm',
-    toDateTime(ts) + INTERVAL 90 DAY DELETE
+TTL toDateTime(ts) + INTERVAL 90 DAY DELETE
 SETTINGS storage_policy = 'default';
 -- Note: In production, change storage_policy to 'hot_warm_cold' once storage volumes are configured.
 
