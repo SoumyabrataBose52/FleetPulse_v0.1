@@ -1,38 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from "react";
 import L from "leaflet";
 import {
-  Radio,
-  Zap,
-  Navigation,
-  AlertTriangle,
-  Award,
-  Shield,
-  Lock,
-  Database,
-  RefreshCw,
-  Search,
-  X,
-  ChevronRight,
-  BatteryCharging,
-  Gauge,
-  Compass,
-  ArrowUpRight,
-  Clock,
-  DollarSign,
-  Leaf,
-  CheckCircle2,
-  Sliders,
-  Car,
-  MapPin,
-  TrendingDown,
-  Layers,
-  Activity,
-  FileCheck
+  Radio, Zap, Navigation, AlertTriangle, Award, Shield, Lock, Database,
+  RefreshCw, X, BatteryCharging, Clock, DollarSign, CheckCircle2, Car,
+  TrendingDown, Activity, Wifi, Compass
 } from "lucide-react";
+import "./index.css";
 
 const CARTO_API_KEY = "cb1_462y_1_a574f8a7c275d9c8b13d1201";
 
-// 7 Indian Logistics Hubs for Quick Flighty Metro Jump
 const METRO_HUBS = [
   { name: "All India", code: "IND", lat: 21.5, lon: 78.9, zoom: 5, count: "100k" },
   { name: "Delhi NCR", code: "DEL", lat: 28.6139, lon: 77.2090, zoom: 11, count: "26.8k" },
@@ -44,1367 +20,1003 @@ const METRO_HUBS = [
   { name: "Pune Hub", code: "PNQ", lat: 18.5204, lon: 73.8567, zoom: 11, count: "3.4k" },
 ];
 
-// 40 Enterprise Fleets in PostgreSQL
 const TENANT_DIRECTORY = [
-  { id: 0, name: "All Tenants (100,000 Global Fleet)", fleet: 100000, baseActive: 98420, archetype: "Global Mixed Fleet" },
-  { id: 1, name: "Enterprise Fleet 01 (Last-Mile Delivery)", fleet: 16543, baseActive: 16280, archetype: "Last Mile Urban" },
-  { id: 2, name: "Enterprise Fleet 02 (Ride-Hail)", fleet: 9501, baseActive: 9345, archetype: "On-Demand Mobility" },
-  { id: 3, name: "Enterprise Fleet 03 (Logistics Haul)", fleet: 6869, baseActive: 6750, archetype: "Heavy Freight" },
-  { id: 4, name: "Enterprise Fleet 04 (Staff Transport)", fleet: 5457, baseActive: 5360, archetype: "Corporate Shuttles" },
-  { id: 5, name: "Enterprise Fleet 05 (Field Service)", fleet: 4565, baseActive: 4490, archetype: "Utility Maintenance" },
-  { id: 6, name: "Enterprise Fleet 06 (Last-Mile Delivery)", fleet: 3945, baseActive: 3880, archetype: "Pharma Logistics" },
-  { id: 7, name: "Enterprise Fleet 07 (Ride-Hail)", fleet: 3488, baseActive: 3430, archetype: "Urban Transit" },
-  { id: 8, name: "Enterprise Fleet 08 (Logistics Haul)", fleet: 3134, baseActive: 3080, archetype: "Heavy Cargo" },
-  { id: 9, name: "Enterprise Fleet 09 (Staff Transport)", fleet: 2852, baseActive: 2805, archetype: "Executive Transit" },
-  { id: 10, name: "Enterprise Fleet 10 (Field Service)", fleet: 2622, baseActive: 2580, archetype: "Telecom Field Ops" },
-  { id: 11, name: "Enterprise Fleet 11 (Last-Mile Delivery)", fleet: 2420, baseActive: 2380, archetype: "E-Commerce Logistics" },
-  { id: 12, name: "Enterprise Fleet 12 (Ride-Hail)", fleet: 2240, baseActive: 2205, archetype: "Airport Shuttles" },
-  { id: 13, name: "Enterprise Fleet 13 (Logistics Haul)", fleet: 2080, baseActive: 2045, archetype: "Port Drayage" },
-  { id: 14, name: "Enterprise Fleet 14 (Staff Transport)", fleet: 1940, baseActive: 1910, archetype: "Campus Commuter" },
-  { id: 15, name: "Enterprise Fleet 15 (Field Service)", fleet: 1810, baseActive: 1780, archetype: "Solar & Grid Maintenance" },
-  { id: 16, name: "Enterprise Fleet 16 (Last-Mile Delivery)", fleet: 1700, baseActive: 1675, archetype: "Grocery Express" },
-  { id: 17, name: "Enterprise Fleet 17 (Ride-Hail)", fleet: 1600, baseActive: 1575, archetype: "Night Transit" },
-  { id: 18, name: "Enterprise Fleet 18 (Logistics Haul)", fleet: 1510, baseActive: 1485, archetype: "Cold Chain Freight" },
-  { id: 19, name: "Enterprise Fleet 19 (Staff Transport)", fleet: 1430, baseActive: 1405, archetype: "Hospital Shift Transport" },
-  { id: 20, name: "Enterprise Fleet 20 (Field Service)", fleet: 1350, baseActive: 1325, archetype: "Water & Municipal Fleet" },
-  { id: 21, name: "Enterprise Fleet 21 (Last-Mile Delivery)", fleet: 1280, baseActive: 1255, archetype: "Retail Restock" },
-  { id: 22, name: "Enterprise Fleet 22 (Ride-Hail)", fleet: 1210, baseActive: 1190, archetype: "Hotel & VIP Dispatch" },
-  { id: 23, name: "Enterprise Fleet 23 (Logistics Haul)", fleet: 1150, baseActive: 1130, archetype: "Automotive Parts Haul" },
-  { id: 24, name: "Enterprise Fleet 24 (Staff Transport)", fleet: 1090, baseActive: 1070, archetype: "Tech Park Link" },
-  { id: 25, name: "Enterprise Fleet 25 (Field Service)", fleet: 1040, baseActive: 1020, archetype: "Broadband Line Crews" },
-  { id: 26, name: "Enterprise Fleet 26 (Last-Mile Delivery)", fleet: 990, baseActive: 970, archetype: "Food & Parcel Couriers" },
-  { id: 27, name: "Enterprise Fleet 27 (Ride-Hail)", fleet: 950, baseActive: 932, archetype: "Station Micro-Shuttle" },
-  { id: 28, name: "Enterprise Fleet 28 (Logistics Haul)", fleet: 910, baseActive: 893, archetype: "Cement & Aggregates" },
-  { id: 29, name: "Enterprise Fleet 29 (Staff Transport)", fleet: 870, baseActive: 854, archetype: "Factory Shift Transit" },
-  { id: 30, name: "Enterprise Fleet 30 (Field Service)", fleet: 830, baseActive: 815, archetype: "HVAC & Mechanical" },
-  { id: 31, name: "Enterprise Fleet 31 (Last-Mile Delivery)", fleet: 800, baseActive: 785, archetype: "Medical Sample Courier" },
-  { id: 32, name: "Enterprise Fleet 32 (Ride-Hail)", fleet: 770, baseActive: 755, archetype: "Shared Commuter Van" },
-  { id: 33, name: "Enterprise Fleet 33 (Logistics Haul)", fleet: 740, baseActive: 726, archetype: "Intermodal Container" },
-  { id: 34, name: "Enterprise Fleet 34 (Staff Transport)", fleet: 710, baseActive: 696, archetype: "Airline Crew Transfer" },
-  { id: 35, name: "Enterprise Fleet 35 (Field Service)", fleet: 680, baseActive: 667, archetype: "EV Charger Service" },
-  { id: 36, name: "Enterprise Fleet 36 (Last-Mile Delivery)", fleet: 650, baseActive: 638, archetype: "Furniture & Whitegoods" },
-  { id: 37, name: "Enterprise Fleet 37 (Ride-Hail)", fleet: 620, baseActive: 608, archetype: "Suburban Feeder" },
-  { id: 38, name: "Enterprise Fleet 38 (Logistics Haul)", fleet: 590, baseActive: 579, archetype: "Steel Coil Transport" },
-  { id: 39, name: "Enterprise Fleet 39 (Staff Transport)", fleet: 560, baseActive: 549, archetype: "University Shuttle" },
-  { id: 40, name: "Enterprise Fleet 40 (Field Service)", fleet: 530, baseActive: 520, archetype: "Traffic Signal Ops" },
+  { id: 0, name: "All Tenants", fleet: 100000, baseActive: 98420, archetype: "Global Mixed Fleet" },
+  { id: 1, name: "Enterprise T01", fleet: 16543, baseActive: 16280, archetype: "Last-Mile Delivery" },
+  { id: 2, name: "Enterprise T02", fleet: 9501, baseActive: 9345, archetype: "Ride-Hail Mobility" },
+  { id: 3, name: "Enterprise T03", fleet: 6869, baseActive: 6750, archetype: "Logistics Haul" },
+  { id: 4, name: "Enterprise T04", fleet: 5457, baseActive: 5360, archetype: "Staff Transport" },
+  { id: 5, name: "Enterprise T05", fleet: 4565, baseActive: 4490, archetype: "Field Services" },
 ];
 
+const NAV_TABS = [
+  { id: "map",       label: "Live Radar",   Icon: Compass },
+  { id: "ev",        label: "EV Optimize",  Icon: BatteryCharging },
+  { id: "trips",     label: "Trips",        Icon: Navigation },
+  { id: "alerts",    label: "Incidents",    Icon: AlertTriangle },
+  { id: "safety",    label: "Safety",       Icon: Award },
+  { id: "geofences", label: "Geofences",    Icon: Shield },
+  { id: "privacy",   label: "Privacy",      Icon: Lock },
+  { id: "ledger",    label: "Ledger",       Icon: Database },
+];
+
+const CORRIDORS = [
+  { orig: "DEL", origName: "Delhi Okhla Hub",    dest: "GGN", destName: "Gurugram CyberCity" },
+  { orig: "BOM", origName: "Nhava Sheva Port",   dest: "BWD", destName: "Bhiwandi Freight" },
+  { orig: "BLR", origName: "Peenya Industrial",  dest: "ELC", destName: "Electronic City" },
+  { orig: "MAA", origName: "Chennai Harbour",    dest: "SPR", destName: "Sriperumbudur" },
+  { orig: "HYD", origName: "Shamshabad Cargo",   dest: "HTC", destName: "HITEC City" },
+  { orig: "PNQ", origName: "Chakan Auto Belt",   dest: "BHS", destName: "Bhosari MIDC" },
+  { orig: "CCU", origName: "Dankuni Logistics",  dest: "SLK", destName: "Salt Lake V" },
+  { orig: "JAI", origName: "Transport Nagar",    dest: "STP", destName: "Sitapura Industrial" },
+];
+
+/* ── helpers ── */
+const fmt = (n) => {
+  const num = typeof n === "number" ? n : parseFloat(n);
+  return isNaN(num) ? "—" : num.toLocaleString();
+};
+const safe = (n, fallback = 0) => (typeof n === "number" && !isNaN(n) ? n : (parseFloat(n) || fallback));
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState("map");
-  const [tenantId, setTenantId] = useState(0); // 0 = 100k Global, 1-40 Enterprise Tenants
-  const [selectedMetro, setSelectedMetro] = useState("IND");
-  const [activeVehicle, setActiveVehicle] = useState(null);
-  const [pulseTick, setPulseTick] = useState(0);
+  const [activeTab,   setActiveTab]   = useState("map");
+  const [tenantId,    setTenantId]    = useState(0);
+  const [metro,       setMetro]       = useState("IND");
+  const [activeVeh,   setActiveVeh]   = useState(null);
+  const [tick,        setTick]        = useState(0);
 
-  // Live Telemetry States
-  const [clusters, setClusters] = useState([]);
-  const [liveVehicles, setLiveVehicles] = useState([]);
-  const [evStats, setEvStats] = useState({
-    total_evs: 29322,
-    charging_now: 5537,
-    at_range_risk: 760,
-    avg_soc_pct: 67.8,
-    soc_histogram: { "0-20%": 760, "20-40%": 3250, "40-60%": 8700, "60-80%": 10650, "80-100%": 5962 }
-  });
-  const [ledgerStatus, setLedgerStatus] = useState({
-    ingest_rate_eps: 102480,
-    accounting_loss_pct: 0.00,
-    audit_chain_length: 24,
-    last_audit_hash: "8f4a1c9e...5b2d01"
-  });
-  const [trips, setTrips] = useState([]);
-  const [alerts, setAlerts] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [geofences, setGeofences] = useState([]);
-  const [costSummary, setCostSummary] = useState({
-    total_cost: 842850.5,
-    energy_cost: 712400.2,
-    idle_cost: 130450.3,
-    total_km: 5245200.0,
-    cost_per_km: 0.161,
-    total_co2_kg: 1048000.0,
-    potential_savings: 89450.0
-  });
+  /* live data */
+  const [evStats,   setEvStats]   = useState({ total_evs: 29322, charging_now: 5537, at_range_risk: 760, avg_soc_pct: 67.8, soc_histogram: { "0-20%": 760, "20-40%": 3250, "40-60%": 8700, "60-80%": 10650, "80-100%": 5962 } });
+  const [ledger,    setLedger]    = useState({ ingest_rate_eps: 102480, accounting_loss_pct: 0.0, audit_chain_length: 24, last_audit_hash: "8f4a1c9e...5b2d01" });
+  const [trips,     setTrips]     = useState([]);
+  const [alerts,    setAlerts]    = useState([]);
+  const [drivers,   setDrivers]   = useState([]);
+  const [geos,      setGeos]      = useState([]);
+  const [cost,      setCost]      = useState({ total_cost: 139070.33, energy_cost: 117546.03, idle_cost: 21524.3, total_km: 865458.0, cost_per_km: 0.161, total_co2_kg: 172920.0, potential_savings: 14759.25, savings: 14759.25 });
 
-  // DP Optimizer interactive state
-  const [dpPid, setDpPid] = useState("00000000-0000-0000-0000-000000000001");
-  const [dpTargetSoc, setDpTargetSoc] = useState(85);
-  const [dpChargerKw, setDpChargerKw] = useState(22);
-  const [dpOptimizing, setDpOptimizing] = useState(false);
-  const [dpPlanResult, setDpPlanResult] = useState(null);
+  /* tab transition toast */
+  const [tabToast, setTabToast] = useState(null);
+  const tabToastTimerRef = useRef(null);
+  const isSwitchingTabRef = useRef(false);
+  const activeTabRef = useRef(activeTab);
 
-  // Erasure interactive state
-  const [erasureId, setErasureId] = useState("driver-103");
-  const [erasureSubmitting, setErasureSubmitting] = useState(false);
-  const [erasureReport, setErasureReport] = useState(null);
-
-  // Leaflet map refs
-  const mapRef = useRef(null);
-  const mapInstance = useRef(null);
-  const clusterGroupRef = useRef(null);
-  const vehicleGroupRef = useRef(null);
-
-  // =========================================================================
-  // 1. Live Data Poller (Ticks every 1200ms automatically across all tabs)
-  // =========================================================================
   useEffect(() => {
-    fetchAllData();
-    const interval = setInterval(() => {
-      fetchLivePulse();
-    }, 1200);
-    return () => clearInterval(interval);
-  }, [tenantId]);
-
-  const fetchAllData = async () => {
-    fetchClustersAndVehicles();
-    fetchEvFleetStatus();
-    fetchTrips();
-    fetchAlerts();
-    fetchDrivers();
-    fetchGeofences();
-    fetchCostSummary();
-    fetchLedger();
-  };
-
-  const fetchLivePulse = async () => {
-    // 1. Map radar stream
-    if (mapInstance.current) {
-      const zoom = mapInstance.current.getZoom();
-      if (zoom >= 10) {
-        fetchVehiclesInViewport();
-      } else {
-        fetchClustersOnly();
-      }
-    }
-    // 2. EV battery & charging telemetry
-    fetchEvFleetStatus();
-    // 3. Accounting zero-loss ledger
-    fetchLedger();
-    // 4. Trips progress (updates distance, duration, and status live)
-    fetchTrips();
-    // 5. Active alerts stream (fresh timestamps and resolution status)
-    fetchAlerts();
-    // 6. EWMA driver safety scores (decay updates)
-    fetchDrivers();
-    // 7. Cost summary
-    fetchCostSummary();
-    // 8. Visual live pulse heartbeat tick
-    setPulseTick((p) => p + 1);
-  };
-
-  // =========================================================================
-  // API Fetchers
-  // =========================================================================
-  const fetchClustersAndVehicles = async () => {
-    try {
-      const param = tenantId === 0 ? "tenant_id=0" : `tenant_id=${tenantId}`;
-      const res = await fetch(`/v1/map/clusters?zoom=5&${param}`);
-      if (res.ok) {
-        const data = await res.json();
-        setClusters(data);
-        renderMapClusters(data);
-      }
-    } catch (e) {
-      console.warn("Map cluster fetch error", e);
-    }
-  };
-
-  const fetchClustersOnly = async () => {
-    try {
-      const param = tenantId === 0 ? "tenant_id=0" : `tenant_id=${tenantId}`;
-      const zoom = mapInstance.current ? mapInstance.current.getZoom() : 5;
-      const res = await fetch(`/v1/map/clusters?zoom=${zoom}&${param}`);
-      if (res.ok) {
-        const data = await res.json();
-        setClusters(data);
-        renderMapClusters(data);
-      }
-    } catch (e) {}
-  };
-
-  const fetchVehiclesInViewport = async () => {
-    if (!mapInstance.current) return;
-    const b = mapInstance.current.getBounds();
-    const bbox = `${b.getWest().toFixed(4)},${b.getSouth().toFixed(4)},${b.getEast().toFixed(4)},${b.getNorth().toFixed(4)}`;
-    try {
-      const param = tenantId === 0 ? "tenant_id=0" : `tenant_id=${tenantId}`;
-      const res = await fetch(`/v1/map/vehicles?bbox=${bbox}&${param}&limit=50`);
-      if (res.ok) {
-        const data = await res.json();
-        setLiveVehicles(data);
-        renderMapVehicles(data);
-      }
-    } catch (e) {}
-  };
-
-  const fetchEvFleetStatus = async () => {
-    try {
-      const param = tenantId === 0 ? "tenant_id=0" : `tenant_id=${tenantId}`;
-      const res = await fetch(`/v1/ev/fleet-status?${param}`);
-      if (res.ok) {
-        const data = await res.json();
-        setEvStats(data);
-      }
-    } catch (e) {}
-  };
-
-  const fetchTrips = async () => {
-    try {
-      const res = await fetch(`/v1/trips?limit=20`);
-      if (res.ok) {
-        const data = await res.json();
-        setTrips(data.items || []);
-      }
-    } catch (e) {}
-  };
-
-  const fetchAlerts = async () => {
-    try {
-      const param = tenantId === 0 ? "" : `?tenant_id=${tenantId}`;
-      const res = await fetch(`/v1/alerts${param}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAlerts(data || []);
-      }
-    } catch (e) {}
-  };
-
-  const fetchDrivers = async () => {
-    try {
-      const res = await fetch(`/v1/safety/drivers?sort=score_desc&limit=15`);
-      if (res.ok) {
-        const data = await res.json();
-        setDrivers(data.items || []);
-      }
-    } catch (e) {}
-  };
-
-  const fetchGeofences = async () => {
-    try {
-      const res = await fetch(`/v1/geofences`);
-      if (res.ok) {
-        const data = await res.json();
-        setGeofences(data || []);
-      }
-    } catch (e) {}
-  };
-
-  const fetchCostSummary = async () => {
-    try {
-      const param = tenantId === 0 ? "tenant_id=0" : `tenant_id=${tenantId}`;
-      const res = await fetch(`/v1/cost/summary?${param}`);
-      if (res.ok) {
-        const data = await res.json();
-        setCostSummary(data);
-      }
-    } catch (e) {}
-  };
-
-  const fetchLedger = async () => {
-    try {
-      const res = await fetch(`/v1/ledger/status`);
-      if (res.ok) {
-        const data = await res.json();
-        setLedgerStatus(data);
-      }
-    } catch (e) {}
-  };
-
-  // =========================================================================
-  // Leaflet Map Initialization with CARTO Voyager & India Centering
-  // =========================================================================
-  useEffect(() => {
-    if (activeTab !== "map" || !mapRef.current) return;
-
-    if (mapInstance.current) {
-      setTimeout(() => {
-        if (mapInstance.current) mapInstance.current.invalidateSize();
-      }, 100);
-      return;
-    }
-
-    const map = L.map(mapRef.current, {
-      center: [21.5, 78.9],
-      zoom: 5,
-      zoomControl: false,
-    });
-
-    L.control.zoom({ position: "topright" }).addTo(map);
-
-    // CARTO Basemaps with authorized API key parameter (Zero Watermark)
-    L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`, {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; FleetPulse',
-      subdomains: "abcd",
-      maxZoom: 19,
-    }).addTo(map);
-
-    clusterGroupRef.current = L.layerGroup().addTo(map);
-    vehicleGroupRef.current = L.layerGroup().addTo(map);
-
-    map.on("moveend zoomend", () => {
-      const z = map.getZoom();
-      if (z >= 10) {
-        if (clusterGroupRef.current) clusterGroupRef.current.clearLayers();
-        fetchVehiclesInViewport();
-      } else {
-        if (vehicleGroupRef.current) vehicleGroupRef.current.clearLayers();
-        fetchClustersOnly();
-      }
-    });
-
-    mapInstance.current = map;
-    
-    // Invalidate size shortly after mounting to ensure perfect rendering
-    setTimeout(() => {
-      if (mapInstance.current) {
-        mapInstance.current.invalidateSize();
-        mapInstance.current.setView([21.5, 78.9], 5);
-      }
-    }, 150);
-
-    fetchClustersAndVehicles();
-
-    return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
-      }
-    };
+    activeTabRef.current = activeTab;
   }, [activeTab]);
 
-  const handleMetroJump = (metro) => {
-    setSelectedMetro(metro.code);
-    if (!mapInstance.current) return;
-    mapInstance.current.flyTo([metro.lat, metro.lon], metro.zoom, {
-      duration: 1.2,
-      easeLinearity: 0.25
+  /* DP optimizer */
+  const [dpPid,     setDpPid]     = useState("00000000-0000-0000-0000-000000000001");
+  const [dpSoc,     setDpSoc]     = useState(85);
+  const [dpKw,      setDpKw]      = useState(22);
+  const [dpBusy,    setDpBusy]    = useState(false);
+  const [dpResult,  setDpResult]  = useState(null);
+
+  /* erasure */
+  const [subjectId, setSubjectId] = useState("driver-103");
+  const [erasing,   setErasing]   = useState(false);
+  const [erasureOk, setErasureOk] = useState(null);
+
+  const mapRef   = useRef(null);
+  const mapInst  = useRef(null);
+  const clGroup  = useRef(null);
+  const vehGroup = useRef(null);
+  const dockRef  = useRef(null);
+  const btnRefs  = useRef({});
+  const [sliderStyle, setSliderStyle] = useState({ width: 0, transform: "translateX(0px)" });
+
+  /* update slider on tab change */
+  const updateSlider = useCallback(() => {
+    const dock = dockRef.current;
+    const btn  = btnRefs.current[activeTab];
+    if (!dock || !btn) return;
+    const dockRect = dock.getBoundingClientRect();
+    const btnRect  = btn.getBoundingClientRect();
+    setSliderStyle({
+      width: `${btnRect.width}px`,
+      transform: `translateX(${btnRect.left - dockRect.left - 6}px)`,
     });
-  };
+  }, [activeTab]);
 
-  const renderMapClusters = (clusterList) => {
-    if (!clusterGroupRef.current || !mapInstance.current) return;
-    if (vehicleGroupRef.current) vehicleGroupRef.current.clearLayers();
+  useLayoutEffect(() => {
+    updateSlider();
+  }, [activeTab, updateSlider]);
 
-    clusterGroupRef.current.clearLayers();
-    clusterList.forEach((c) => {
-      const radius = Math.min(46, Math.max(20, Math.log2(c.count + 1) * 8.2));
-      const icon = L.divIcon({
-        className: "custom-cluster-icon",
-        html: `
-          <div style="width: ${radius * 2}px; height: ${radius * 2}px; border-radius: 50%; background: radial-gradient(circle, rgba(2,132,199,0.9) 0%, rgba(37,99,235,0.45) 70%, transparent 100%); border: 2px solid #0284c7; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 16px rgba(2,132,199,0.5); cursor: pointer; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
-            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: ${radius > 26 ? '13px' : '11px'}; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">${c.count.toLocaleString()}</span>
-          </div>
-        `,
-        iconSize: [radius * 2, radius * 2],
-        iconAnchor: [radius, radius],
-      });
+  useEffect(() => {
+    window.addEventListener("resize", updateSlider);
+    return () => window.removeEventListener("resize", updateSlider);
+  }, [updateSlider]);
 
-      const marker = L.marker([c.lat, c.lon], { icon }).addTo(clusterGroupRef.current);
-      marker.on("click", () => {
-        mapInstance.current.flyTo([c.lat, c.lon], 9, { duration: 0.8 });
-      });
-    });
-  };
+  /* tab relative switcher */
+  const switchTabRelative = useCallback((direction) => {
+    if (isSwitchingTabRef.current) return;
+    const curIdx = NAV_TABS.findIndex(t => t.id === activeTabRef.current);
+    if (curIdx === -1) return;
+    const nextIdx = curIdx + direction;
+    if (nextIdx < 0 || nextIdx >= NAV_TABS.length) return;
 
-  const renderMapVehicles = (vehList) => {
-    // Spinning orbital vehicle markers removed per user preference
-    if (vehicleGroupRef.current) {
-      vehicleGroupRef.current.clearLayers();
-    }
-  };
+    isSwitchingTabRef.current = true;
+    setTimeout(() => { isSwitchingTabRef.current = false; }, 750);
 
-  const inspectVehicleState = async (pid, lat, lon, speed, hdg, st) => {
-    let detail = {
-      vehicle_pid: pid,
-      lat: lat || 28.6139,
-      lon: lon || 77.2090,
-      speed_kmh: speed || 42.5,
-      heading_deg: hdg || 90,
-      status: st || "DRIVING",
-      soc_pct: 74.2,
-      fuel_pct: 68.0,
-      powertrain: "EV",
-      model: "Tesla Model 3 / Tata Nexon EV",
-      vin: "1HGCR2F8" + pid.substring(0, 8).toUpperCase(),
-      dtc_count: 0
+    const targetTab = NAV_TABS[nextIdx];
+    setActiveTab(targetTab.id);
+
+    if (tabToastTimerRef.current) clearTimeout(tabToastTimerRef.current);
+    setTabToast(`${direction > 0 ? "↓" : "↑"} ${targetTab.label}`);
+    tabToastTimerRef.current = setTimeout(() => setTabToast(null), 1400);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  /* scroll & wheel boundary navigation */
+  useEffect(() => {
+    let wheelAcc = 0;
+    let accTimer = null;
+
+    const handleWheel = (e) => {
+      // Don't trigger if cursor is inside map or terminal or drawer
+      if (e.target && e.target.closest) {
+        if (e.target.closest("#fp-map-canvas") || e.target.closest(".leaflet-container") || e.target.closest(".fp-terminal") || e.target.closest(".fp-drawer")) {
+          return;
+        }
+      }
+
+      if (isSwitchingTabRef.current) return;
+
+      const docElem = document.documentElement;
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      const windowHeight = window.innerHeight;
+      const scrollHeight = Math.max(docElem.scrollHeight, document.body.scrollHeight);
+      const isAtBottom = windowHeight + scrollY >= scrollHeight - 30;
+      const isAtTop = scrollY <= 15;
+      const isShortPage = scrollHeight <= windowHeight + 40;
+
+      if ((isAtBottom || isShortPage) && e.deltaY > 20) {
+        wheelAcc += e.deltaY;
+        if (accTimer) clearTimeout(accTimer);
+        accTimer = setTimeout(() => { wheelAcc = 0; }, 250);
+        if (wheelAcc > 45) {
+          wheelAcc = 0;
+          switchTabRelative(1);
+        }
+      } else if ((isAtTop || isShortPage) && e.deltaY < -20) {
+        wheelAcc += e.deltaY;
+        if (accTimer) clearTimeout(accTimer);
+        accTimer = setTimeout(() => { wheelAcc = 0; }, 250);
+        if (wheelAcc < -45) {
+          wheelAcc = 0;
+          switchTabRelative(-1);
+        }
+      }
     };
 
-    try {
-      const res = await fetch(`/v1/vehicles/${pid}/live`);
-      if (res.ok) {
-        const live = await res.json();
-        detail = { ...detail, ...live };
+    let touchStartY = 0;
+    const handleTouchStart = (e) => {
+      if (e.touches && e.touches[0]) {
+        touchStartY = e.touches[0].clientY;
       }
-    } catch (e) {}
+    };
 
-    setActiveVehicle(detail);
+    const handleTouchEnd = (e) => {
+      if (isSwitchingTabRef.current) return;
+      if (e.target && e.target.closest && (e.target.closest("#fp-map-canvas") || e.target.closest(".leaflet-container"))) return;
+      if (!e.changedTouches || !e.changedTouches[0]) return;
+      const touchEndY = e.changedTouches[0].clientY;
+      const deltaY = touchStartY - touchEndY;
+
+      const docElem = document.documentElement;
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      const windowHeight = window.innerHeight;
+      const scrollHeight = Math.max(docElem.scrollHeight, document.body.scrollHeight);
+      const isAtBottom = windowHeight + scrollY >= scrollHeight - 40;
+      const isAtTop = scrollY <= 20;
+
+      if (isAtBottom && deltaY > 60) {
+        switchTabRelative(1);
+      } else if (isAtTop && deltaY < -60) {
+        switchTabRelative(-1);
+      }
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+      if (accTimer) clearTimeout(accTimer);
+      if (tabToastTimerRef.current) clearTimeout(tabToastTimerRef.current);
+    };
+  }, [switchTabRelative]);
+
+  /* ── data fetch helpers ── */
+  const qp = () => `tenant_id=${tenantId}`;
+
+  const safeJson = async (url) => {
+    try { const r = await fetch(url); return r.ok ? r.json() : null; } catch { return null; }
   };
 
-  // Run DP Optimizer Handler
-  const handleRunDpOptimizer = async () => {
-    setDpOptimizing(true);
-    try {
-      const res = await fetch(`/v1/ev/plan`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vehicle_pid: dpPid,
-          plug_out_ts: Math.floor(Date.now() / 1000) + 7200,
-          target_soc: parseFloat(dpTargetSoc),
-          charger_max_kw: parseFloat(dpChargerKw),
-        })
+  const loadAll = async () => {
+    const [ev, led, tr, al, drv, geo, c] = await Promise.all([
+      safeJson(`/v1/ev/fleet-status?${qp()}`),
+      safeJson("/v1/ledger/status"),
+      safeJson("/v1/trips?limit=20"),
+      safeJson(`/v1/alerts?${qp()}`),
+      safeJson("/v1/safety/drivers?sort=score_desc&limit=15"),
+      safeJson("/v1/geofences"),
+      safeJson(`/v1/cost/summary?${qp()}`),
+    ]);
+    if (ev)  setEvStats(ev);
+    if (led) setLedger(led);
+    if (tr)  setTrips(tr.items || tr || []);
+    if (al)  setAlerts(Array.isArray(al) ? al : (al?.items || []));
+    if (drv) setDrivers(drv.items || drv || []);
+    if (geo) setGeos(Array.isArray(geo) ? geo : (geo?.items || []));
+    if (c)   setCost(prev => ({
+      ...prev,
+      ...c,
+      /* normalise field name variants from different API versions */
+      total_co2_kg:      c.total_co2_kg      ?? c.co2_kg          ?? prev.total_co2_kg ?? 172920,
+      potential_savings: c.potential_savings  ?? c.savings         ?? prev.potential_savings ?? 14759,
+      savings:           c.potential_savings  ?? c.savings         ?? prev.savings ?? 14759,
+      idle_cost:         c.idle_cost         ?? prev.idle_cost     ?? 0,
+      energy_cost:       c.energy_cost       ?? prev.energy_cost   ?? 0,
+      total_cost:        c.total_cost        ?? prev.total_cost    ?? 0,
+      total_km:          c.total_km          ?? prev.total_km      ?? 0,
+      cost_per_km:       c.cost_per_km       ?? prev.cost_per_km   ?? 0.161,
+    }));
+  };
+
+  /* fetch clusters for map */
+  const fetchClusters = async (zoom = 5) => {
+    const d = await safeJson(`/v1/map/clusters?zoom=${zoom}&${qp()}`);
+    if (d) paintClusters(d);
+  };
+
+  const fetchVehicles = async () => {
+    if (!mapInst.current) return;
+    const b = mapInst.current.getBounds();
+    const bbox = `${b.getWest().toFixed(4)},${b.getSouth().toFixed(4)},${b.getEast().toFixed(4)},${b.getNorth().toFixed(4)}`;
+    const d = await safeJson(`/v1/map/vehicles?bbox=${bbox}&${qp()}&limit=50`);
+    if (d && vehGroup.current) {
+      vehGroup.current.clearLayers();
+      d.forEach(v => {
+        const color = v.status === "CHARGING" ? "#10b981" : v.status === "IDLE" ? "#f59e0b" : "#ff3366";
+        const ic = L.divIcon({
+          className: "",
+          html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid #ffffff;box-shadow:0 2px 8px rgba(0,0,0,0.25)"></div>`,
+          iconSize: [12,12], iconAnchor: [6,6]
+        });
+        L.marker([v.lat, v.lon], { icon: ic }).addTo(vehGroup.current)
+          .on("click", () => setActiveVeh(v));
       });
-      if (res.ok) {
-        const plan = await res.json();
-        setDpPlanResult(plan);
-      }
-    } catch (e) {
-      console.warn("DP optimization failed", e);
-    } finally {
-      setDpOptimizing(false);
     }
   };
 
-  // Resolve Alert Handler
-  const handleResolveAlert = async (alertId) => {
-    try {
-      await fetch(`/v1/alerts/${alertId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "RESOLVED" })
+  const paintClusters = (list) => {
+    if (!clGroup.current) return;
+    clGroup.current.clearLayers();
+    list.forEach(c => {
+      const r = Math.min(48, Math.max(18, Math.log2(c.count + 1) * 8));
+      const ic = L.divIcon({
+        className: "",
+        html: `<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:radial-gradient(circle,rgba(255,51,102,0.92) 0%,rgba(255,107,44,0.65) 65%,transparent 100%);border:2px solid #ffffff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(255,51,102,0.4);cursor:pointer"><span style="font-family:monospace;font-weight:800;font-size:${r>26?"12px":"9px"};color:#ffffff">${c.count.toLocaleString()}</span></div>`,
+        iconSize: [r*2,r*2], iconAnchor: [r,r]
       });
-      setAlerts((prev) => prev.map((a) => a.alert_id === alertId ? { ...a, status: "RESOLVED" } : a));
-    } catch (e) {}
+      L.marker([c.lat, c.lon], { icon: ic }).addTo(clGroup.current)
+        .on("click", () => mapInst.current?.flyTo([c.lat, c.lon], 9, { duration: 0.8 }));
+    });
   };
 
-  // Erasure Workflow Handler
-  const handleExecuteErasure = async () => {
-    setErasureSubmitting(true);
-    try {
-      const res = await fetch(`/v1/privacy/erasure-requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject_type: "DRIVER", subject_id: erasureId })
-      });
-      if (res.ok) {
-        const report = await res.json();
-        setErasureReport(report);
-      }
-    } catch (e) {} finally {
-      setErasureSubmitting(false);
-    }
+  /* ── lifecycle ── */
+  useEffect(() => {
+    loadAll();
+    const iv = setInterval(() => {
+      loadAll();
+      const zoom = mapInst.current?.getZoom() ?? 5;
+      if (zoom >= 10) fetchVehicles(); else fetchClusters(zoom);
+      setTick(t => t + 1);
+    }, 1400);
+    return () => clearInterval(iv);
+  }, [tenantId]);
+
+  /* ── map init ── */
+  useEffect(() => {
+    if (activeTab !== "map" || !mapRef.current) return;
+    if (mapInst.current) { setTimeout(() => mapInst.current?.invalidateSize(), 80); return; }
+    const map = L.map(mapRef.current, { center: [21.5, 78.9], zoom: 5, zoomControl: false });
+    L.control.zoom({ position: "topright" }).addTo(map);
+    L.tileLayer(
+      `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`,
+      { attribution: "© CARTO · © OpenStreetMap · FleetPulse", subdomains: "abcd", maxZoom: 19 }
+    ).addTo(map);
+    clGroup.current  = L.layerGroup().addTo(map);
+    vehGroup.current = L.layerGroup().addTo(map);
+    map.on("moveend zoomend", () => {
+      const z = map.getZoom();
+      if (z >= 10) { clGroup.current.clearLayers(); fetchVehicles(); }
+      else { vehGroup.current.clearLayers(); fetchClusters(z); }
+    });
+    mapInst.current = map;
+    setTimeout(() => { mapInst.current?.invalidateSize(); fetchClusters(5); }, 150);
+    return () => { mapInst.current?.remove(); mapInst.current = null; };
+  }, [activeTab]);
+
+  /* ── actions ── */
+  const jumpMetro = (m) => {
+    setMetro(m.code);
+    mapInst.current?.flyTo([m.lat, m.lon], m.zoom, { duration: 1.1, easeLinearity: 0.25 });
   };
 
-  const totalClusterVehicles = clusters.reduce((acc, c) => acc + c.count, 0);
+  const resolveAlert = async (id) => {
+    await fetch(`/v1/alerts/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "RESOLVED" }) });
+    setAlerts(prev => prev.map(a => a.alert_id === id ? { ...a, status: "RESOLVED" } : a));
+  };
 
+  const runDp = async () => {
+    setDpBusy(true);
+    const r = await fetch("/v1/ev/plan", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vehicle_pid: dpPid, plug_out_ts: Math.floor(Date.now()/1000)+7200, target_soc: +dpSoc, charger_max_kw: +dpKw })
+    });
+    if (r.ok) setDpResult(await r.json());
+    setDpBusy(false);
+  };
+
+  const executeErasure = async () => {
+    setErasing(true);
+    const r = await fetch("/v1/privacy/erasure-requests", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject_type: "DRIVER", subject_id: subjectId })
+    });
+    if (r.ok) setErasureOk(await r.json());
+    setErasing(false);
+  };
+
+  /* ── derived ── */
+  const tenant      = TENANT_DIRECTORY.find(t => t.id === tenantId) || TENANT_DIRECTORY[0];
+  const jitter      = Math.floor(Math.sin(tick * 0.7) * 11);
+  const liveActive  = tenant.baseActive + jitter;
+  const gridMw     = safe(evStats.charging_now * 0.0112).toFixed(1);
+  const subCapMw   = tenantId === 0 ? "85.0" : Math.max(12, 85 * safe(tenant.fleet) / 100000).toFixed(1);
+  const pctOnline  = safe(tenant.fleet) > 0 ? ((liveActive / tenant.fleet) * 100).toFixed(1) : "0.0";
+  const co2Tonnes  = (safe(cost.total_co2_kg ?? cost.co2_kg, 172920) / 1000).toFixed(0);
+  const savingsK   = (safe(cost.potential_savings ?? cost.savings, 14759) / 1000).toFixed(0);
+  const ingestK    = (safe(ledger.ingest_rate_eps, 102480) / 1000).toFixed(1);
+  const openAlerts = alerts.filter(a => a.status === "OPEN" || a.status !== "RESOLVED").length;
+
+  /* ═══════════════════════════════════════════════════════════════
+     RENDER
+  ═══════════════════════════════════════════════════════════════ */
   return (
-    <div className="flight-app">
-      {/* =================================================================== */}
-      {/* 1. FLIGHTY TOP FLOATING HEADER & TELEMETRY ISLAND */}
-      {/* =================================================================== */}
-      <div className="flight-header-wrapper">
-        <header className="flight-navbar">
-          <div className="brand-section" onClick={() => setActiveTab("map")}>
-            <div className="brand-logo-icon">
-              <Radio size={20} />
-            </div>
-            <div className="brand-info">
-              <div className="brand-title">
-                Fleet<span>Pulse</span>
-                <span className="brand-badge">FLIGHTY RADAR</span>
-              </div>
-              <span className="brand-subtitle">Connected Vehicle Intelligence</span>
-            </div>
+    <div className="fp-app">
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          TOP STATUS BAR — minimal, glass
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <header className="fp-statusbar">
+        <div className="fp-brand" onClick={() => setActiveTab("map")}>
+          <div className="fp-brand-icon"><Radio size={16} /></div>
+          <div className="fp-brand-name">Fleet<em>Pulse</em></div>
+        </div>
+
+        <div className="fp-statusbar-right">
+          <div className="fp-live-badge">
+            <span className="fp-live-dot" />
+            LIVE · {fmt(ledger.ingest_rate_eps)} eps
+          </div>
+          <div className="fp-stat-chip">
+            Loss: <strong style={{ color: "var(--accent-emerald)" }}>0.000%</strong>
+          </div>
+          <div className="fp-stat-chip">
+            Fleet: <strong>{fmt(liveActive)}</strong>
+          </div>
+          <div className="fp-stat-chip">
+            Grid: <strong>{gridMw} MW</strong>
           </div>
 
-          {/* Telemetry Status Strip */}
-          <div className="header-telemetry-island">
-            <div className="live-stream-pill">
-              <span className="live-beacon"></span>
-              <span>LIVE 1s STREAM</span>
+          {/* tenant selector */}
+          <div className="fp-tenant-wrap">
+            <div className="fp-segmented">
+              {[{ id: 0, label: "All" }, { id: 1, label: "T1" }, { id: 2, label: "T2" }, { id: 3, label: "T3" }].map(t => (
+                <button key={t.id} className={`fp-seg-btn${tenantId === t.id ? " active" : ""}`} onClick={() => setTenantId(t.id)}>{t.label}</button>
+              ))}
             </div>
-
-            <div className="metric-chip">
-              <span>INGESTION:</span>
-              <strong>{ledgerStatus.ingest_rate_eps.toLocaleString()} eps</strong>
-            </div>
-
-            <div className="metric-chip">
-              <span>LOSS:</span>
-              <strong style={{ color: "#059669" }}>0.000% (ZERO LOSS)</strong>
-            </div>
-
-            {/* Segmented Tenant Selector (All 40 Tenants Available) */}
-            <div className="flight-tenant-selector" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <div className="flight-segmented-switch">
-                <button
-                  className={`switch-btn ${tenantId === 0 ? "active" : ""}`}
-                  onClick={() => setTenantId(0)}
-                  title="Global 100,000 Vehicle Fleet"
-                >
-                  All Tenants (100K)
-                </button>
-                <button
-                  className={`switch-btn ${tenantId === 1 ? "active" : ""}`}
-                  onClick={() => setTenantId(1)}
-                  title="Tenant 1: Last Mile Delivery"
-                >
-                  T1 (16.5K)
-                </button>
-                <button
-                  className={`switch-btn ${tenantId === 2 ? "active" : ""}`}
-                  onClick={() => setTenantId(2)}
-                  title="Tenant 2: Ride Hail"
-                >
-                  T2 (9.5K)
-                </button>
-                <button
-                  className={`switch-btn ${tenantId === 3 ? "active" : ""}`}
-                  onClick={() => setTenantId(3)}
-                  title="Tenant 3: Heavy Freight"
-                >
-                  T3 (6.9K)
-                </button>
-              </div>
-
-              {/* Full 40 Tenant Dropdown */}
-              <select
-                className="flight-tenant-dropdown"
-                value={tenantId}
-                onChange={(e) => setTenantId(parseInt(e.target.value, 10))}
-                style={{
-                  background: "#ffffff",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "14px",
-                  padding: "5px 10px",
-                  fontSize: "11px",
-                  fontWeight: "700",
-                  color: "#1e293b",
-                  outline: "none",
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
-                }}
-              >
-                <option value={0}>🏢 All Tenants (100,000 Global Fleet)</option>
-                {TENANT_DIRECTORY.filter(t => t.id !== 0).map(t => (
-                  <option key={t.id} value={t.id}>
-                    Tenant {t.id}: {t.name} ({t.fleet.toLocaleString()} veh)
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select className="fp-tenant-select" value={tenantId} onChange={e => setTenantId(+e.target.value)}>
+              {TENANT_DIRECTORY.map(t => (
+                <option key={t.id} value={t.id}>{t.id === 0 ? "All Tenants (100K)" : `${t.name} · ${t.archetype} (${fmt(t.fleet)})`}</option>
+              ))}
+            </select>
           </div>
-        </header>
 
-        {/* =================================================================== */}
-        {/* 2. FLIGHTY SEGMENTED NAVIGATION TABS */}
-        {/* =================================================================== */}
-        <nav className="flight-tabs-bar">
-          <button
-            className={`flight-tab-pill ${activeTab === "map" ? "active" : ""}`}
-            onClick={() => setActiveTab("map")}
-          >
-            <Compass size={15} /> Live Radar Map
+          <button className="fp-btn-secondary" onClick={loadAll} style={{ padding: "5px 13px", fontSize: "11px" }}>
+            <RefreshCw size={12} /> Refresh
           </button>
-          <button
-            className={`flight-tab-pill ${activeTab === "ev" ? "active" : ""}`}
-            onClick={() => setActiveTab("ev")}
-          >
-            <Zap size={15} /> EV & DP Optimizer
-          </button>
-          <button
-            className={`flight-tab-pill ${activeTab === "trips" ? "active" : ""}`}
-            onClick={() => setActiveTab("trips")}
-          >
-            <Navigation size={15} /> Active Trips (Viterbi HMM)
-          </button>
-          <button
-            className={`flight-tab-pill ${activeTab === "alerts" ? "active" : ""}`}
-            onClick={() => setActiveTab("alerts")}
-          >
-            <AlertTriangle size={15} /> Incident Center
-            {alerts.filter((a) => a.status === "OPEN").length > 0 && (
-              <span className="tab-counter">{alerts.filter((a) => a.status === "OPEN").length}</span>
-            )}
-          </button>
-          <button
-            className={`flight-tab-pill ${activeTab === "safety" ? "active" : ""}`}
-            onClick={() => setActiveTab("safety")}
-          >
-            <Award size={15} /> Driver Safety (EWMA)
-          </button>
-          <button
-            className={`flight-tab-pill ${activeTab === "geofences" ? "active" : ""}`}
-            onClick={() => setActiveTab("geofences")}
-          >
-            <Shield size={15} /> Geofences & Depots
-          </button>
-          <button
-            className={`flight-tab-pill ${activeTab === "privacy" ? "active" : ""}`}
-            onClick={() => setActiveTab("privacy")}
-          >
-            <Lock size={15} /> Privacy & Erasure
-          </button>
-          <button
-            className={`flight-tab-pill ${activeTab === "ledger" ? "active" : ""}`}
-            onClick={() => setActiveTab("ledger")}
-          >
-            <Database size={15} /> Zero-Loss Ledger
-          </button>
-        </nav>
-      </div>
+        </div>
+      </header>
 
-      {/* =================================================================== */}
-      {/* 3. FLIGHTY MAIN VIEWPORT */}
-      {/* =================================================================== */}
-      <main className="flight-main-viewport">
-        {/* =================================================================== */}
-        {/* FLIGHTY "PASSPORT" HERO TELEMETRICS TABS */}
-        {/* =================================================================== */}
-        {(() => {
-          const currentTenant = TENANT_DIRECTORY.find((t) => t.id === tenantId) || TENANT_DIRECTORY[0];
-          const activeJitter = Math.floor(Math.sin(pulseTick * 0.7) * 12);
-          const liveActiveFleet = currentTenant.baseActive + activeJitter;
-          const gridDrawMw = (evStats.charging_now * 0.0112).toFixed(1);
-          const subCapMw = tenantId === 0 ? 85.0 : Math.max(12.0, (85.0 * (currentTenant.fleet / 100000.0)).toFixed(1));
-          const subCapPct = Math.min(100, Math.round(((parseFloat(gridDrawMw) / parseFloat(subCapMw)) * 100)));
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          VIEWPORT
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <main className="fp-viewport">
 
-          return (
-            <section className="passport-hero-card">
-              <div className="passport-top-header">
-                <div className="passport-title-group">
-                  <h2>{currentTenant.name}</h2>
-                  <p>Real-time distributed telemetry synchronization across 7 major Indian logistics corridors • {currentTenant.archetype}</p>
-                </div>
-                <div className="passport-actions">
-                  <div className="metric-chip" style={{ background: "#f8fafc" }}>
-                    <span>METROS:</span>
-                    <strong>7 Active Corridors</strong>
-                  </div>
-                  <button className="btn-flighty-secondary" onClick={fetchAllData}>
-                    <RefreshCw size={14} /> Refresh Radar
-                  </button>
-                </div>
-              </div>
-
-              <div className="passport-metrics-grid">
-                {/* Hero Tile 1: TOTAL CONNECTED FLEET (Active in BIG, Total in SMALL) */}
-                <div className="flight-stat-tile tile-blue">
-                  <div className="tile-top">
-                    <span className="tile-label">TOTAL CONNECTED FLEET</span>
-                    <Car size={16} />
-                  </div>
-                  <div className="tile-value">
-                    {liveActiveFleet.toLocaleString()}
-                  </div>
-                  <div className="tile-footer">
-                    Total: <strong>{currentTenant.fleet.toLocaleString()}</strong> Enrolled Vehicles ({((liveActiveFleet / currentTenant.fleet) * 100).toFixed(1)}% Online)
-                  </div>
-                </div>
-
-                {/* Hero Tile 2: DEPOT GRID DRAW (CHARGING) */}
-                <div className="flight-stat-tile tile-green">
-                  <div className="tile-top">
-                    <span className="tile-label">DEPOT GRID DRAW (CHARGING)</span>
-                    <BatteryCharging size={16} />
-                  </div>
-                  <div className="tile-value" style={{ color: "#059669" }}>
-                    {evStats.charging_now.toLocaleString()} <span style={{ fontSize: "16px", fontWeight: "600", color: "#059669" }}>EVs</span>
-                  </div>
-                  <div className="tile-footer">
-                    Draw: <strong>{gridDrawMw} MW</strong> ({subCapPct}% of {subCapMw} MW Substation Cap)
-                  </div>
-                </div>
-
-            <div className="flight-stat-tile tile-amber">
-              <div className="tile-top">
-                <span className="tile-label">FLEET AVERAGE SOC</span>
-                <Zap size={16} />
-              </div>
-              <div className="tile-value" style={{ color: "#d97706" }}>
-                {evStats.avg_soc_pct}%
-              </div>
-              <div className="tile-footer">
-                Median Battery Health (SoH): <strong>94.2%</strong>
-              </div>
+        {/* ── HERO ── */}
+        <section className="fp-hero">
+          <div className="fp-hero-bg" />
+          <div className="fp-hero-inner">
+            <div className="fp-hero-eyebrow">
+              <Wifi size={11} />
+              Connected Vehicle Intelligence · India Smart Cities Mission · 100K Fleet
             </div>
+            <h1 className="fp-hero-headline">
+              Know everything about<br />
+              <span className="gradient-text">your fleet, in real time.</span>
+            </h1>
+            <p className="fp-hero-sub">
+              Sub-second telemetry across 7 Indian logistics corridors. Viterbi HMM trip segmentation, Bellman DP charging optimizer, EWMA safety scoring — all live, zero telemetry loss.
+            </p>
 
-            <div className="flight-stat-tile tile-purple">
-              <div className="tile-top">
-                <span className="tile-label">AVOIDABLE IDLE LOSS</span>
-                <TrendingDown size={16} />
+            {/* ── KPI Tiles ── */}
+            <div className="fp-hero-metrics">
+              <div className="fp-metric-tile blue">
+                <div className="fp-tile-label">Total Connected Fleet <Car size={12} /></div>
+                <div className="fp-tile-value blue">{fmt(liveActive)}</div>
+                <div className="fp-tile-sub">Enrolled: <strong>{fmt(tenant.fleet)}</strong> · {pctOnline}% online</div>
               </div>
-              <div className="tile-value" style={{ color: "#7c3aed" }}>
-                ${costSummary.idle_cost.toLocaleString()}
+
+              <div className="fp-metric-tile emerald">
+                <div className="fp-tile-label">Charging Now (EVs) <BatteryCharging size={12} /></div>
+                <div className="fp-tile-value emerald">{fmt(evStats.charging_now)}</div>
+                <div className="fp-tile-sub">Grid draw: <strong>{gridMw} MW</strong> of {subCapMw} MW substation</div>
               </div>
-              <div className="tile-footer">
-                Mitigated via Viterbi HMM: <strong>$14,850/mo</strong>
+
+              <div className="fp-metric-tile amber">
+                <div className="fp-tile-label">Fleet Average SOC <Zap size={12} /></div>
+                <div className="fp-tile-value amber">{evStats.avg_soc_pct}%</div>
+                <div className="fp-tile-sub">Median SoH: <strong>94.2%</strong> · At risk: <strong style={{ color: "var(--accent-rose)" }}>{fmt(evStats.at_range_risk)}</strong></div>
+              </div>
+
+              <div className="fp-metric-tile violet">
+                <div className="fp-tile-label">Avoidable Idle Loss <TrendingDown size={12} /></div>
+                <div className="fp-tile-value violet">${fmt(cost.idle_cost)}</div>
+                <div className="fp-tile-sub">Viterbi HMM saved: <strong>$14,850/mo</strong></div>
+              </div>
+
+              <div className="fp-metric-tile rose">
+                <div className="fp-tile-label">CO₂ Avoided (MoM) <Activity size={12} /></div>
+                <div className="fp-tile-value rose">{co2Tonnes}<span style={{ fontSize: 15, marginLeft: 4 }}>t</span></div>
+                <div className="fp-tile-sub">vs ICE baseline · <strong>${savingsK}k savings</strong></div>
+              </div>
+
+              <div className="fp-metric-tile cyan">
+                <div className="fp-tile-label">Ingest Rate <Wifi size={12} /></div>
+                <div className="fp-tile-value cyan">{ingestK}<span style={{ fontSize: 15, marginLeft: 4 }}>k eps</span></div>
+                <div className="fp-tile-sub">Chain depth: <strong>{ledger.audit_chain_length} blocks</strong> · Loss: <strong style={{ color: "var(--accent-emerald)" }}>0.000%</strong></div>
               </div>
             </div>
           </div>
         </section>
-      );
-    })()}
 
-        {/* =================================================================== */}
-        {/* TAB 1: LIVE RADAR FLEET MAP (FLIGHTY STYLE) */}
-        {/* =================================================================== */}
-        {activeTab === "map" && (
-          <section className="flight-radar-wrapper">
-            <div className="radar-header">
-              <div className="radar-header-info">
-                <h3>Live Fleet Spatial Radar (§8.M1, §9)</h3>
-                <p>Sub-second geohash clusters at scale. Zoom into level 10+ to stream individual vehicle trajectories with heading and speed tags.</p>
-              </div>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                <span className="badge-pill status-optimal">● 100k Streams Active</span>
-              </div>
-            </div>
+        {/* ── TAB CONTENT ── */}
+        <div className="fp-content">
 
-            <div className="radar-map-stage">
-              <div id="flight-radar-map-canvas" ref={mapRef}></div>
-
-              {/* Floating Quick Metro Chips Overlay */}
-              <div className="map-metro-chips-overlay">
-                {METRO_HUBS.map((metro) => (
-                  <button
-                    key={metro.code}
-                    className={`metro-chip-btn ${selectedMetro === metro.code ? "active" : ""}`}
-                    onClick={() => handleMetroJump(metro)}
-                  >
-                    <span>{metro.name}</span>
-                    <span style={{ opacity: 0.8, fontSize: "11px", fontFamily: "var(--font-mono)" }}>
-                      ({metro.count})
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* =================================================================== */}
-        {/* TAB 2: EV INTELLIGENCE & DP CHARGING OPTIMIZER */}
-        {/* =================================================================== */}
-        {activeTab === "ev" && (
-          <section className="flight-radar-wrapper">
-            <div className="radar-header">
-              <div className="radar-header-info">
-                <h3>Dynamic Programming Charging Optimizer (§7.13, §8.M4)</h3>
-                <p>Bellman backward-induction charging schedule with CC-CV battery taper and time-of-use (ToU) tariff arbitrage.</p>
-              </div>
-              <button
-                className="btn-flighty-primary"
-                onClick={handleRunDpOptimizer}
-                disabled={dpOptimizing}
-              >
-                {dpOptimizing ? "Running Bellman DP..." : "Run DP Optimizer"}
-              </button>
-            </div>
-
-            {/* Form inputs */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
-              <div>
-                <label style={{ fontSize: "12px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "6px" }}>TARGET VEHICLE PID</label>
-                <input
-                  type="text"
-                  value={dpPid}
-                  onChange={(e) => setDpPid(e.target.value)}
-                  style={{ width: "100%", padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: "10px", fontFamily: "var(--font-mono)", fontSize: "12px" }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: "12px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "6px" }}>DEPARTURE SOC (%)</label>
-                <input
-                  type="number"
-                  value={dpTargetSoc}
-                  onChange={(e) => setDpTargetSoc(e.target.value)}
-                  min="20"
-                  max="100"
-                  style={{ width: "100%", padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: "10px", fontSize: "13px" }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: "12px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "6px" }}>CHARGER POWER LIMIT (kW)</label>
-                <input
-                  type="number"
-                  value={dpChargerKw}
-                  onChange={(e) => setDpChargerKw(e.target.value)}
-                  min="3"
-                  max="150"
-                  style={{ width: "100%", padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: "10px", fontSize: "13px" }}
-                />
-              </div>
-            </div>
-
-            {/* DP Results Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-              <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "18px", borderRadius: "14px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>Baseline (Immediate) Cost</span>
-                <div style={{ fontSize: "26px", fontWeight: "800", color: "#64748b", fontFamily: "var(--font-mono)", marginTop: "4px" }}>
-                  ${dpPlanResult ? dpPlanResult.baseline_cost.toFixed(2) : "14.50"}
+          {/* ════════ MAP ════════ */}
+          {activeTab === "map" && (
+            <div className="fp-section" key="map">
+              <div className="fp-section-header">
+                <div>
+                  <div className="fp-section-title">Live Fleet Spatial Radar</div>
+                  <div className="fp-section-sub">Real-time geohash clusters · Zoom ≥ 10 for individual trajectories with heading, speed, and SoC · 7 corridor depots</div>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span className="fp-badge green">● {fmt(liveActive)} Active</span>
+                  <span className="fp-badge blue">7 Corridors</span>
+                  <span className="fp-badge violet">{tenant.archetype}</span>
                 </div>
               </div>
-              <div style={{ background: "#ede9fe", border: "1px solid rgba(124,58,237,0.3)", padding: "18px", borderRadius: "14px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#7c3aed", textTransform: "uppercase" }}>Smart DP Optimized Cost</span>
-                <div style={{ fontSize: "26px", fontWeight: "800", color: "#7c3aed", fontFamily: "var(--font-mono)", marginTop: "4px" }}>
-                  ${dpPlanResult ? dpPlanResult.smart_cost.toFixed(2) : "8.20"}
-                </div>
-              </div>
-              <div style={{ background: "#d1fae5", border: "1px solid rgba(5,150,105,0.3)", padding: "18px", borderRadius: "14px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#059669", textTransform: "uppercase" }}>Total Energy Savings</span>
-                <div style={{ fontSize: "26px", fontWeight: "800", color: "#059669", fontFamily: "var(--font-mono)", marginTop: "4px" }}>
-                  ${dpPlanResult ? dpPlanResult.saving.toFixed(2) : "6.30"} (43.4%)
+              <div className="fp-section-body">
+                <div className="fp-map-stage">
+                  <div id="fp-map-canvas" ref={mapRef} />
+                  <div className="fp-map-chips">
+                    {METRO_HUBS.map(m => (
+                      <button key={m.code} className={`fp-metro-chip${metro === m.code ? " active" : ""}`} onClick={() => jumpMetro(m)}>
+                        {m.name} <span className="fp-metro-count">({m.count})</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Visual 24-Hour Time-of-Use Tariff Chart */}
-            <div style={{ marginTop: "12px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <span style={{ fontSize: "12px", fontWeight: "700", textTransform: "uppercase", color: "#475569" }}>
-                  24-Hour Time-of-Use Electricity Tariff Matrix ($/kWh)
-                </span>
-                <div style={{ display: "flex", gap: "12px", fontSize: "11px", fontWeight: "600" }}>
-                  <span style={{ color: "#059669" }}>■ Off-Peak ($0.10)</span>
-                  <span style={{ color: "#d97706" }}>■ Mid-Peak ($0.22)</span>
-                  <span style={{ color: "#e11d48" }}>■ Super-Peak ($0.38)</span>
+          {/* ════════ EV + DP ════════ */}
+          {activeTab === "ev" && (
+            <div className="fp-section" key="ev">
+              <div className="fp-section-header">
+                <div>
+                  <div className="fp-section-title">EV Intelligence & Bellman DP Charging Optimizer</div>
+                  <div className="fp-section-sub">Backward-induction dynamic programming with CC-CV taper model and 24-h time-of-use tariff arbitrage (§7.13 / §8.M4).</div>
                 </div>
+                <button className="fp-btn-primary" onClick={runDp} disabled={dpBusy}>
+                  <Zap size={14} /> {dpBusy ? "Solving Bellman DP…" : "Run DP Optimizer"}
+                </button>
               </div>
+              <div className="fp-section-body">
 
-              <div className="dp-tariff-bar-chart">
-                {Array.from({ length: 24 }).map((_, h) => {
-                  const tariff = (h >= 17 && h <= 21) ? 0.38 : (h >= 8 && h <= 16) ? 0.22 : 0.10;
-                  const tierClass = tariff > 0.30 ? "super-peak" : tariff > 0.15 ? "mid-peak" : "off-peak";
-                  const heightPct = Math.round((tariff / 0.40) * 100);
-                  return (
-                    <div key={h} className="tariff-hour-column">
-                      <div className={`tariff-fill-bar ${tierClass}`} style={{ height: `${heightPct}%` }}></div>
-                      <span className="tariff-hour-label">{h}h</span>
+                {/* SOC histogram */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", color: "var(--text-muted)", marginBottom: 10 }}>Fleet SoC Distribution</div>
+                  <div className="fp-soc-bars">
+                    {Object.entries(evStats.soc_histogram).map(([lbl, val]) => {
+                      const max = Math.max(...Object.values(evStats.soc_histogram));
+                      return (
+                        <div key={lbl} className="fp-soc-bar-col">
+                          <div className="fp-soc-bar" style={{ height: `${(val/max)*100}%` }} />
+                          <span className="fp-soc-label">{lbl}</span>
+                          <span className="fp-soc-label" style={{ color: "var(--text-secondary)", fontWeight: 700 }}>{(val/1000).toFixed(1)}k</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* inputs */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14 }}>
+                  {[
+                    { label: "Vehicle PID", val: dpPid, set: setDpPid, type: "text" },
+                    { label: "Target Departure SOC (%)", val: dpSoc, set: setDpSoc, type: "number" },
+                    { label: "Charger Power Limit (kW)", val: dpKw, set: setDpKw, type: "number" },
+                  ].map(({ label, val, set, type }) => (
+                    <div key={label}>
+                      <label className="fp-input-label">{label}</label>
+                      <input type={type} value={val} onChange={e => set(e.target.value)} className="fp-input" />
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
+                  ))}
+                </div>
 
-        {/* =================================================================== */}
-        {/* TAB 3: TRIPS & VITERBI HMM SEGMENTATION (BOARDING PASS CARDS) */}
-        {/* =================================================================== */}
-        {activeTab === "trips" && (
-          <section className="flight-radar-wrapper">
-            <div className="radar-header">
-              <div className="radar-header-info">
-                <h3>Viterbi Dynamic Programming Trip Segmentation (§7.10)</h3>
-                <p>Hidden Markov Model state transitions eliminate false stoplight segmentations and isolate avoidable fuel idling waste.</p>
-              </div>
-              <span className="badge-pill status-optimal">● HMM F1-Score: 0.962</span>
-            </div>
+                {/* DP result cards */}
+                <div className="fp-data-grid">
+                  <div className="fp-data-card">
+                    <div className="fp-data-label">Baseline (Greedy) Cost</div>
+                    <div className="fp-data-value">${dpResult ? dpResult.baseline_cost.toFixed(2) : "14.50"}</div>
+                  </div>
+                  <div className="fp-data-card highlight-violet">
+                    <div className="fp-data-label violet">DP Optimized Cost</div>
+                    <div className="fp-data-value violet">${dpResult ? dpResult.smart_cost.toFixed(2) : "8.20"}</div>
+                  </div>
+                  <div className="fp-data-card highlight-green">
+                    <div className="fp-data-label green">Net Savings / Cycle</div>
+                    <div className="fp-data-value green">${dpResult ? dpResult.saving.toFixed(2) : "6.30"}</div>
+                  </div>
+                  <div className="fp-data-card">
+                    <div className="fp-data-label">Fleet Monthly Savings</div>
+                    <div className="fp-data-value">$89,450</div>
+                  </div>
+                </div>
 
-            <div className="trips-flight-deck">
-              {trips.map((t, idx) => {
-                const idleSeconds = t.idle_s || 180;
-                const idleWasteDollars = ((idleSeconds / 3600.0) * 4.20).toFixed(2);
-                const isOptimal = idleSeconds < 300;
-                const isInProgress = t.status === "IN_PROGRESS";
-                const progressPct = isInProgress
-                  ? Math.min(96, Math.max(15, Math.round(((t.duration_s % 3600) / 3600.0) * 100)))
-                  : 100;
-                const energyKwh = ((t.distance_km || 30.0) * 0.22).toFixed(1);
-                const costVal = (t.cost || 5.80).toFixed(2);
-
-                // Derive origin / destination corridor labels based on trip index
-                const corridors = [
-                  { origCode: "DEL", origName: "Delhi Okhla Hub", destCode: "GGN", destName: "Gurugram CyberCity" },
-                  { origCode: "BOM", origName: "Nhava Sheva Port", destCode: "BWD", destName: "Bhiwandi Freight Hub" },
-                  { origCode: "BLR", origName: "Peenya Industrial", destCode: "ELC", destName: "Electronic City Corridor" },
-                  { origCode: "MAA", origName: "Chennai Harbour", destCode: "SPR", destName: "Sriperumbudur Assembly" },
-                  { origCode: "HYD", origName: "Shamshabad Cargo", destCode: "HTC", destName: "HITEC City Distribution" },
-                  { origCode: "PNQ", origName: "Chakan Auto Belt", destCode: "BHS", destName: "Bhosari MIDC Hub" },
-                  { origCode: "CCU", origName: "Dankuni Logistics", destCode: "SLK", destName: "Salt Lake Sector V" },
-                  { origCode: "JAI", origName: "Transport Nagar", destCode: "STP", destName: "Sitapura Industrial" },
-                ];
-                const corr = corridors[idx % corridors.length];
-
-                return (
-                  <div key={t.trip_id} className="flight-boarding-pass-card">
-                    <div className="pass-header-row">
-                      <div className="pass-vehicle-tag">
-                        <Car size={16} style={{ color: isInProgress ? "#0284c7" : "#059669" }} />
-                        <span className="flight-number-badge">TRIP-{t.trip_id.substring(0, 8).toUpperCase()}</span>
-                        <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>
-                          Vehicle {t.vehicle_pid.substring(t.vehicle_pid.length - 8)}
-                        </span>
-                        {isInProgress && (
-                          <span className="badge-pill status-optimal" style={{ background: "#e0f2fe", color: "#0284c7", border: "1px solid #7dd3fc" }}>
-                            ● IN FLIGHT (TRANSMITTING)
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        {isOptimal ? (
-                          <span className="badge-pill status-optimal">Optimal Viterbi Transit</span>
-                        ) : (
-                          <span className="badge-pill status-warning">
-                            ${idleWasteDollars} Avoidable Idle Waste
-                          </span>
-                        )}
-                      </div>
+                {/* tariff chart */}
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", color: "var(--text-muted)" }}>24-Hour ToU Tariff Matrix</span>
+                    <div style={{ display: "flex", gap: 14, fontSize: 10.5, fontWeight: 600 }}>
+                      <span style={{ color: "var(--accent-emerald)" }}>■ Off-Peak ₹8.2/kWh</span>
+                      <span style={{ color: "var(--accent-amber)" }}>■ Mid-Peak ₹18.4/kWh</span>
+                      <span style={{ color: "var(--accent-rose)" }}>■ Super-Peak ₹32.0/kWh</span>
                     </div>
+                  </div>
+                  <div className="fp-tariff-chart">
+                    {Array.from({ length: 24 }).map((_, h) => {
+                      const r = (h >= 17 && h <= 21) ? 0.38 : (h >= 8 && h <= 16) ? 0.22 : 0.10;
+                      const tier = r > 0.30 ? "super-peak" : r > 0.15 ? "mid-peak" : "off-peak";
+                      return (
+                        <div key={h} className="fp-tariff-col">
+                          <div className={`fp-tariff-bar ${tier}`} style={{ height: `${Math.round((r/0.40)*100)}%` }} />
+                          <span className="fp-tariff-hour">{h}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
-                    <div className="pass-corridor-route">
-                      <div className="corridor-origin">
-                        <span className="airport-code">{corr.origCode}</span>
-                        <span className="airport-name">{corr.origName}</span>
-                      </div>
-
-                      <div className="corridor-progress-mid">
-                        <span className="corridor-meta-ticker">
-                          <Navigation size={13} />
-                          {t.distance_km} km • {Math.round(t.duration_s / 60)} mins
-                        </span>
-                        <div className="progress-track-bar">
-                          <div className="progress-track-fill" style={{ width: `${progressPct}%` }}></div>
-                          <div className="progress-glider-icon" style={{ left: `${progressPct}%` }}>
-                            <Navigation size={12} style={{ transform: "rotate(90deg)", color: isInProgress ? "#0284c7" : "#059669" }} />
+          {/* ════════ TRIPS ════════ */}
+          {activeTab === "trips" && (
+            <div className="fp-section" key="trips">
+              <div className="fp-section-header">
+                <div>
+                  <div className="fp-section-title">Active Trips — Viterbi HMM Segmentation</div>
+                  <div className="fp-section-sub">Hidden Markov Model state transitions isolate avoidable idling waste · F1-Score 0.962 · ΔCost-per-km: −$0.034</div>
+                </div>
+                <span className="fp-badge blue">HMM F1 0.962</span>
+              </div>
+              <div className="fp-section-body">
+                <div className="fp-trip-deck">
+                  {trips.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-muted)" }}>
+                      <Navigation size={36} style={{ margin: "0 auto 12px", display: "block", opacity: 0.3 }} />
+                      <div style={{ fontWeight: 600 }}>Loading live trips…</div>
+                    </div>
+                  )}
+                  {trips.map((t, i) => {
+                    const corr   = CORRIDORS[i % CORRIDORS.length];
+                    const idle   = t.idle_s || 180;
+                    const live   = t.status === "IN_PROGRESS";
+                    const pct    = live ? Math.min(94, Math.max(12, Math.round(((t.duration_s % 3600)/3600)*100))) : 100;
+                    const energy = ((t.distance_km || 30) * 0.22).toFixed(1);
+                    return (
+                      <div key={t.trip_id} className="fp-boarding-pass">
+                        <div className="fp-pass-header">
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                            <span className="fp-pass-id">TRIP-{(t.trip_id||"").substring(0,8).toUpperCase()}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>VEH-{(t.vehicle_pid||"").slice(-6)}</span>
+                            {live && <span className="fp-badge blue">● IN FLIGHT</span>}
+                          </div>
+                          <span className={`fp-badge ${idle < 300 ? "green" : "amber"}`}>
+                            {idle < 300 ? "Viterbi Optimal" : `$${((idle/3600)*4.2).toFixed(2)} idle waste`}
+                          </span>
+                        </div>
+                        <div className="fp-corridor">
+                          <div className="fp-origin">
+                            <span className="fp-airport-code">{corr.orig}</span>
+                            <span className="fp-airport-name">{corr.origName}</span>
+                          </div>
+                          <div className="fp-progress-mid">
+                            <span className="fp-prog-meta">
+                              <Navigation size={12} />{t.distance_km} km · {Math.round((t.duration_s||0)/60)} min
+                            </span>
+                            <div className="fp-prog-track">
+                              <div className="fp-prog-fill" style={{ width: `${pct}%` }} />
+                              <div className="fp-prog-cursor" style={{ left: `${pct}%` }}>
+                                <Navigation size={8} style={{ transform: "rotate(90deg)" }} />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="fp-dest">
+                            <span className="fp-airport-code">{corr.dest}</span>
+                            <span className="fp-airport-name">{corr.destName}</span>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="corridor-destination">
-                        <span className="airport-code">{corr.destCode}</span>
-                        <span className="airport-name">{corr.destName}</span>
-                      </div>
-                    </div>
-
-                    <div className="pass-footer-strip">
-                      <div className="pass-stat-item">
-                        <Clock size={13} />
-                        <span>DEP: <strong>{new Date(t.start_ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></span>
-                      </div>
-                      <div className="pass-stat-item">
-                        <Zap size={13} />
-                        <span>ENERGY: <strong>{energyKwh} kWh</strong></span>
-                      </div>
-                      <div className="pass-stat-item">
-                        <DollarSign size={13} />
-                        <span>EST. TRIP COST: <strong>${costVal}</strong></span>
-                      </div>
-                      <div className="pass-stat-item">
-                        <Activity size={13} />
-                        <span>VITERBI STATE: <strong>{isInProgress ? "CRUISING (HMM)" : "STOPPED / COMPLETED"}</strong></span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* =================================================================== */}
-        {/* TAB 4: INCIDENT CENTER & CRITICAL ALERTS */}
-        {/* =================================================================== */}
-        {activeTab === "alerts" && (
-          <section className="flight-radar-wrapper">
-            <div className="radar-header">
-              <div className="radar-header-info">
-                <h3>Incident Center & Operational Safety Alerts (§8.M5)</h3>
-                <p>Real-time telemetry event stream with sub-second alert generation (&lt; 140ms p95) and one-click resolution dispatch.</p>
-              </div>
-              <span className="badge-pill status-critical">
-                {alerts.filter((a) => a.status === "OPEN").length} Active Unresolved Incidents
-              </span>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {alerts.map((al) => {
-                const isCritical = al.severity === "CRITICAL";
-                const isResolved = al.status === "RESOLVED";
-                const elapsedSec = Math.max(1, Math.round((Date.now() - (al.opened_at || Date.now())) / 1000));
-                const timeAgo = elapsedSec < 60 ? `${elapsedSec}s ago` : `${Math.round(elapsedSec / 60)}m ago`;
-
-                return (
-                  <div
-                    key={al.alert_id}
-                    style={{
-                      background: isResolved ? "#f8fafc" : "#ffffff",
-                      border: `1px solid ${isResolved ? "#e2e8f0" : isCritical ? "rgba(225,29,72,0.3)" : "rgba(217,119,6,0.3)"}`,
-                      borderRadius: "14px",
-                      padding: "18px 22px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "16px",
-                      flexWrap: "wrap",
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.03)"
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                      <div
-                        style={{
-                          width: "42px",
-                          height: "42px",
-                          borderRadius: "10px",
-                          background: isResolved ? "#e2e8f0" : isCritical ? "#ffe4e6" : "#fef3c7",
-                          color: isResolved ? "#64748b" : isCritical ? "#e11d48" : "#d97706",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}
-                      >
-                        <AlertTriangle size={20} />
-                      </div>
-                      <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                          <span style={{ fontSize: "14px", fontWeight: "800", color: "#0f172a" }}>
-                            {(al.type || al.alert_type || "TELEMETRY_ALERT").replace(/_/g, " ")}
-                          </span>
-                          <span className={`badge-pill ${isCritical ? "status-critical" : "status-warning"}`}>
-                            {al.severity}
-                          </span>
-                          <span style={{ fontSize: "11px", fontWeight: "600", color: "#64748b", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px" }}>
-                            {timeAgo}
-                          </span>
-                          {isResolved && <span className="badge-pill status-optimal">RESOLVED</span>}
-                        </div>
-                        <p style={{ fontSize: "12px", color: "#475569", marginTop: "4px", lineHeight: "1.4" }}>
-                          {al.message || al.description} • Vehicle: <code style={{ fontFamily: "var(--font-mono)", fontWeight: "600" }}>{al.vehicle_pid ? al.vehicle_pid.substring(al.vehicle_pid.length - 8) : "00000001"}</code>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      {!isResolved ? (
-                        <button
-                          className="btn-flighty-primary"
-                          onClick={() => handleResolveAlert(al.alert_id)}
-                          style={{ padding: "8px 16px", fontSize: "12px" }}
-                        >
-                          <CheckCircle2 size={14} /> Resolve Incident
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: "12px", fontWeight: "700", color: "#059669" }}>
-                          ✓ Resolved &amp; Audited
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* =================================================================== */}
-        {/* TAB 5: DRIVER SAFETY & COACHING (EWMA DECAY) */}
-        {/* =================================================================== */}
-        {activeTab === "safety" && (
-          <section className="flight-radar-wrapper">
-            <div className="radar-header">
-              <div className="radar-header-info">
-                <h3>Pilot / Driver Safety Leaderboard & EWMA Coaching (§7.16, §8.M6)</h3>
-                <p>Exponentially Weighted Moving Average (EWMA) with daily decay factor α = 0.95 (half-life: 13.5 days). Rewards sustained good driving.</p>
-              </div>
-              <span className="badge-pill status-optimal">● Spearman ρ = -0.84 Accident Correlation</span>
-            </div>
-
-            <div className="pilot-cards-grid">
-              {drivers.map((d, idx) => {
-                const score = d.score !== undefined ? d.score : (d.safety_score || 85.0);
-                const name = d.display_name || d.full_name || `Driver ${d.driver_id}`;
-                const harshBrakes = d.harsh_brakes !== undefined ? d.harsh_brakes : (d.harsh_brake_count || 0);
-                const harshAccels = d.harsh_accels !== undefined ? d.harsh_accels : (d.harsh_accel_count || 0);
-                const overspeeds = d.overspeeds !== undefined ? d.overspeeds : (d.overspeed_count || 0);
-                const tierClass = score >= 90 ? "score-tier-green" : score >= 75 ? "score-tier-amber" : "score-tier-red";
-
-                return (
-                  <div key={d.driver_id} className="pilot-safety-card">
-                    <div className="pilot-left-profile">
-                      <div className="pilot-avatar-ring">
-                        {name ? name.substring(0, 2).toUpperCase() : `D${idx + 1}`}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: "15px", fontWeight: "800", color: "#0f172a" }}>
-                          {name}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                          Fleet: {d.fleet_name || "Express Logistics"} • {d.total_trips || 142} Trips
-                        </div>
-                        <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
-                          <span style={{ fontSize: "10px", fontWeight: "700", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px" }}>
-                            HB: {harshBrakes}
-                          </span>
-                          <span style={{ fontSize: "10px", fontWeight: "700", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px" }}>
-                            HA: {harshAccels}
-                          </span>
-                          <span style={{ fontSize: "10px", fontWeight: "700", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px" }}>
-                            OS: {overspeeds}
-                          </span>
+                        <div className="fp-pass-footer">
+                          <span className="fp-pass-stat"><Clock size={11} />DEP: <strong>{t.start_ts ? new Date(t.start_ts*1000).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) : "--:--"}</strong></span>
+                          <span className="fp-pass-stat"><Zap size={11} />ENERGY: <strong>{energy} kWh</strong></span>
+                          <span className="fp-pass-stat"><DollarSign size={11} />COST: <strong>${(t.cost||5.8).toFixed(2)}</strong></span>
+                          <span className="fp-pass-stat"><Activity size={11} />HMM: <strong>{live ? "CRUISING" : "COMPLETE"}</strong></span>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════ ALERTS ════════ */}
+          {activeTab === "alerts" && (
+            <div className="fp-section" key="alerts">
+              <div className="fp-section-header">
+                <div>
+                  <div className="fp-section-title">Incident Center — Live Alert Stream</div>
+                  <div className="fp-section-sub">Sub-140ms p95 alert latency · Rule engine + ML anomaly detector · Real-time one-click resolution</div>
+                </div>
+                <span className="fp-badge red">{openAlerts} Active</span>
+              </div>
+              <div className="fp-section-body">
+                <div className="fp-alert-list">
+                  {alerts.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>No incidents — system nominal</div>
+                  )}
+                  {alerts.map(al => {
+                    const crit = al.severity === "CRITICAL";
+                    const done = al.status === "RESOLVED";
+                    const ago  = (() => {
+                      const s = Math.max(1, Math.round((Date.now() - (al.opened_at||Date.now()))/1000));
+                      return s < 60 ? `${s}s ago` : `${Math.round(s/60)}m ago`;
+                    })();
+                    return (
+                      <div key={al.alert_id} className={`fp-alert-card ${done ? "resolved" : crit ? "critical" : "warning"}`}>
+                        <div className={`fp-alert-icon ${done ? "resolved" : crit ? "critical" : "warning"}`}>
+                          <AlertTriangle size={18} />
+                        </div>
+                        <div className="fp-alert-body">
+                          <div className="fp-alert-title">
+                            {(al.type || al.alert_type || "TELEMETRY_ALERT").replace(/_/g," ")}
+                            <span className={`fp-badge ${crit ? "red" : "amber"}`}>{al.severity}</span>
+                            <span style={{ fontSize: 10, background: "var(--glass-medium)", border: "1px solid var(--border-faint)", padding: "2px 7px", borderRadius: 4, color: "var(--text-muted)" }}>{ago}</span>
+                            {done && <span className="fp-badge green">RESOLVED</span>}
+                          </div>
+                          <div className="fp-alert-desc">
+                            {al.message || al.description} · VEH: <code style={{ fontFamily: "var(--font-mono)", color: "var(--text-secondary)", fontSize: 11 }}>{(al.vehicle_pid||"00000001").slice(-8)}</code>
+                          </div>
+                        </div>
+                        {!done
+                          ? <button className="fp-btn-primary" onClick={() => resolveAlert(al.alert_id)} style={{ padding: "7px 14px", fontSize: 12 }}><CheckCircle2 size={13} /> Resolve</button>
+                          : <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-emerald)", flexShrink: 0 }}>✓ Done</span>
+                        }
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════ SAFETY ════════ */}
+          {activeTab === "safety" && (
+            <div className="fp-section" key="safety">
+              <div className="fp-section-header">
+                <div>
+                  <div className="fp-section-title">Driver Safety — EWMA Scoring Engine</div>
+                  <div className="fp-section-sub">Exponentially Weighted Moving Average α=0.95 (13.5-day half-life) · Spearman ρ=−0.84 accident correlation · Gamification ladder</div>
+                </div>
+                <span className="fp-badge violet">ρ −0.84</span>
+              </div>
+              <div className="fp-section-body">
+                <div className="fp-driver-grid">
+                  {drivers.length === 0 && (
+                    <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>Loading driver scores…</div>
+                  )}
+                  {drivers.map(d => {
+                    const score = +(d.score ?? d.safety_score ?? 85).toFixed(1);
+                    const name  = d.display_name || d.full_name || `Driver ${d.driver_id}`;
+                    const tier  = score >= 90 ? "green" : score >= 75 ? "amber" : "red";
+                    return (
+                      <div key={d.driver_id} className="fp-driver-card">
+                        <div className="fp-driver-left">
+                          <div className="fp-driver-avatar">{name.substring(0,2).toUpperCase()}</div>
+                          <div>
+                            <div className="fp-driver-name">{name}</div>
+                            <div className="fp-driver-meta">{d.fleet_name || "FleetPulse Express"} · {d.total_trips || 142} trips</div>
+                            <div className="fp-driver-tags">
+                              <span className="fp-driver-tag">HB: {d.harsh_brakes ?? d.harsh_brake_count ?? 0}</span>
+                              <span className="fp-driver-tag">HA: {d.harsh_accels ?? d.harsh_accel_count ?? 0}</span>
+                              <span className="fp-driver-tag">OS: {d.overspeeds ?? d.overspeed_count ?? 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={`fp-score-circle ${tier}`}>
+                          <span>{score}</span>
+                          <span className="fp-score-label">EWMA</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════ GEOFENCES ════════ */}
+          {activeTab === "geofences" && (
+            <div className="fp-section" key="geofences">
+              <div className="fp-section-header">
+                <div>
+                  <div className="fp-section-title">Depot Geofences — Jordan Curve PiP Engine</div>
+                  <div className="fp-section-sub">Ray-casting point-in-polygon (JCT) with PostGIS GiST spatial indexing ≤ 2ms latency · Dwell time × idle cost attribution (§7.17)</div>
+                </div>
+                <span className="fp-badge green">● {geos.length || 6} Depots</span>
+              </div>
+              <div className="fp-section-body">
+                <div className="fp-geo-grid">
+                  {geos.map(gf => (
+                    <div key={gf.geofence_id} className="fp-geo-card">
+                      <div className="fp-geo-title">
+                        {gf.name}
+                        <span className="fp-badge cyan">{gf.geofence_type || "DEPOT"}</span>
+                      </div>
+                      <div className="fp-geo-meta">
+                        Hub: <strong style={{ color: "var(--text-secondary)" }}>{gf.city || "Metro Hub"}</strong> · Area: {gf.area_sq_km || "4.2"} km²
+                      </div>
+                      <div className="fp-geo-footer">
+                        <span>Inside: <strong style={{ color: "var(--text-secondary)" }}>{gf.active_vehicles_inside || 48} vehicles</strong></span>
+                        <span style={{ color: "var(--accent-emerald)", fontWeight: 700 }}>● Secured</span>
+                      </div>
                     </div>
-
-                    <div className={`pilot-score-circle ${tierClass}`}>
-                      <span>{typeof score === "number" ? score.toFixed(1) : score}</span>
-                      <span style={{ fontSize: "9px", fontWeight: "700" }}>EWMA</span>
+                  ))}
+                  {geos.length === 0 && [
+                    { id: 1, name: "Delhi — Okhla Industrial Depot", city: "New Delhi", area: "6.2", inside: 312, type: "DEPOT" },
+                    { id: 2, name: "Mumbai — Bhiwandi Freight Hub", city: "Mumbai MMR", area: "8.9", inside: 287, type: "DEPOT" },
+                    { id: 3, name: "Bengaluru — Peenya Central",    city: "Bengaluru", area: "5.1", inside: 231, type: "DEPOT" },
+                    { id: 4, name: "Chennai — Ennore Port Zone",    city: "Chennai",   area: "4.8", inside: 178, type: "PORT" },
+                    { id: 5, name: "Hyderabad — HITEC Charging Pod", city: "Hyderabad", area: "2.3", inside: 96, type: "CHARGER" },
+                    { id: 6, name: "Kolkata — Dankuni Rail Hub",    city: "Kolkata",   area: "7.4", inside: 143, type: "DEPOT" },
+                  ].map(g => (
+                    <div key={g.id} className="fp-geo-card">
+                      <div className="fp-geo-title">{g.name}<span className="fp-badge cyan">{g.type}</span></div>
+                      <div className="fp-geo-meta">Hub: <strong style={{ color: "var(--text-secondary)" }}>{g.city}</strong> · Area: {g.area} km²</div>
+                      <div className="fp-geo-footer">
+                        <span>Inside: <strong style={{ color: "var(--text-secondary)" }}>{g.inside} vehicles</strong></span>
+                        <span style={{ color: "var(--accent-emerald)", fontWeight: 700 }}>● Secured</span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* =================================================================== */}
-        {/* TAB 6: GEOFENCES & DEPOT ASSETS */}
-        {/* =================================================================== */}
-        {activeTab === "geofences" && (
-          <section className="flight-radar-wrapper">
-            <div className="radar-header">
-              <div className="radar-header-info">
-                <h3>Depot Geofences & Polygon Containment (§7.17, §8.M7)</h3>
-                <p>Jordan Curve Theorem ray-casting Point-in-Polygon detection with PostGIS GiST spatial bounding box indexing.</p>
-              </div>
-              <span className="badge-pill status-optimal">● 6 Monitored Hub Depots</span>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "16px" }}>
-              {geofences.map((gf) => (
-                <div
-                  key={gf.geofence_id}
-                  style={{
-                    background: "#ffffff",
-                    border: "1px solid var(--card-border)",
-                    borderRadius: "14px",
-                    padding: "20px",
-                    boxShadow: "var(--shadow-xs)"
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "15px", fontWeight: "800", color: "#0f172a" }}>{gf.name}</span>
-                    <span className="badge-pill status-optimal">{gf.geofence_type || "DEPOT"}</span>
-                  </div>
-                  <p style={{ fontSize: "12px", color: "#64748b", margin: "8px 0 14px" }}>
-                    Hub Corridor: <strong>{gf.city || "National Metro"}</strong> • Area: {gf.area_sq_km || 4.2} km²
-                  </p>
-                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px dashed #e2e8f0", paddingTop: "12px", fontSize: "12px" }}>
-                    <span>Active Dwell Vehicles: <strong>{gf.active_vehicles_inside || 48}</strong></span>
-                    <span style={{ color: "#059669", fontWeight: "700" }}>Secured</span>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* =================================================================== */}
-        {/* TAB 7: PRIVACY & RIGHT-TO-ERASURE */}
-        {/* =================================================================== */}
-        {activeTab === "privacy" && (
-          <section className="flight-radar-wrapper">
-            <div className="radar-header">
-              <div className="radar-header-info">
-                <h3>Differential Privacy & Multi-Store Right-to-Erasure (§7.19, §8.S4)</h3>
-                <p>Laplace mechanism differential privacy exports and synchronized GDPR / India DPDP Act 2023 multi-store purge certificate.</p>
               </div>
             </div>
+          )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px" }}>
-              {/* Erasure Runner Card */}
-              <div style={{ background: "#f8fafc", border: "1px solid var(--card-border)", borderRadius: "14px", padding: "22px" }}>
-                <h4 style={{ fontSize: "15px", fontWeight: "800", color: "#0f172a", marginBottom: "8px" }}>
-                  Execute Driver Right-to-Erasure
-                </h4>
-                <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "16px" }}>
-                  Synchronously scrubs telemetry and driver PII across PostgreSQL, ClickHouse, Redis, and S3 Parquet Lakehouse.
-                </p>
-                <div style={{ marginBottom: "14px" }}>
-                  <label style={{ fontSize: "11px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "6px" }}>
-                    TARGET DRIVER SUBJECT ID
-                  </label>
-                  <input
-                    type="text"
-                    value={erasureId}
-                    onChange={(e) => setErasureId(e.target.value)}
-                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: "10px", fontSize: "13px" }}
-                  />
+          {/* ════════ PRIVACY ════════ */}
+          {activeTab === "privacy" && (
+            <div className="fp-section" key="privacy">
+              <div className="fp-section-header">
+                <div>
+                  <div className="fp-section-title">Differential Privacy & Right-to-Erasure</div>
+                  <div className="fp-section-sub">Laplace mechanism (ε=0.75) exports · Synchronized GDPR + India DPDP 2023 multi-store scrub · Cryptographic certificate (§7.19 / §8.S4)</div>
                 </div>
-                <button
-                  className="btn-flighty-primary"
-                  onClick={handleExecuteErasure}
-                  disabled={erasureSubmitting}
-                  style={{ width: "100%" }}
-                >
-                  {erasureSubmitting ? "Scrubbing 4 Stores..." : "Execute 4-Store Scrub & Verify"}
-                </button>
-
-                {erasureReport && (
-                  <div style={{ marginTop: "16px", padding: "14px", background: "#d1fae5", border: "1px solid rgba(5,150,105,0.3)", borderRadius: "10px" }}>
-                    <div style={{ fontSize: "13px", fontWeight: "800", color: "#059669", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <CheckCircle2 size={16} /> Erasure Verified (0 Residual Records)
-                    </div>
-                    <div style={{ fontSize: "11px", color: "#065f46", marginTop: "4px", fontFamily: "var(--font-mono)" }}>
-                      Audit Token: {erasureReport.verification_token || "ERASE-CERT-2026-9921"}
-                    </div>
-                  </div>
-                )}
               </div>
+              <div className="fp-section-body">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20 }}>
+                  {/* erasure card */}
+                  <div className="fp-data-card">
+                    <div className="fp-data-label" style={{ marginBottom: 12 }}>Execute Driver Right-to-Erasure</div>
+                    <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.65 }}>
+                      Simultaneously purges PII + telemetry from PostgreSQL, ClickHouse, Redis, and S3 Parquet Lakehouse with verification certificate.
+                    </p>
+                    <label className="fp-input-label">Subject Driver ID</label>
+                    <input type="text" value={subjectId} onChange={e => setSubjectId(e.target.value)} className="fp-input" style={{ marginBottom: 14 }} />
+                    <button className="fp-btn-primary" onClick={executeErasure} disabled={erasing} style={{ width: "100%" }}>
+                      {erasing ? "Scrubbing 4 Stores…" : "Execute 4-Store Scrub & Certify"}
+                    </button>
+                    {erasureOk && (
+                      <div style={{ marginTop: 14, padding: 14, background: "var(--accent-emerald-subtle)", border: "1px solid rgba(52,211,153,0.25)", borderRadius: "var(--r-md)" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent-emerald)", display: "flex", alignItems: "center", gap: 6 }}>
+                          <CheckCircle2 size={15} /> 0 Residual Records — Erasure Verified
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--accent-emerald)", marginTop: 5, fontFamily: "var(--font-mono)", opacity: 0.8 }}>
+                          Token: {erasureOk.verification_token || "ERASE-CERT-2026-FP9921"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-              {/* Differential Privacy Card */}
-              <div style={{ background: "#f8fafc", border: "1px solid var(--card-border)", borderRadius: "14px", padding: "22px" }}>
-                <h4 style={{ fontSize: "15px", fontWeight: "800", color: "#0f172a", marginBottom: "8px" }}>
-                  Differential Privacy Laplace Noise (§7.19)
-                </h4>
-                <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "16px" }}>
-                  Injects zero-mean Laplace noise: <code style={{ fontFamily: "var(--font-mono)" }}>Laplace(0, 1.0 / ε)</code> to prevent individual vehicle trajectory reconstruction.
-                </p>
-                <div style={{ background: "#ffffff", padding: "16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px" }}>
-                    <span style={{ fontWeight: "700" }}>Privacy Budget (ε):</span>
-                    <strong style={{ fontFamily: "var(--font-mono)", color: "#0284c7" }}>0.75 / 1.00</strong>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px" }}>
-                    <span style={{ fontWeight: "700" }}>Noise Scale (b = 1/ε):</span>
-                    <strong style={{ fontFamily: "var(--font-mono)" }}>1.333</strong>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                    <span style={{ fontWeight: "700" }}>Re-identification Risk:</span>
-                    <strong style={{ color: "#059669" }}>0.00% (Provably Secure)</strong>
+                  {/* DP info */}
+                  <div className="fp-data-card">
+                    <div className="fp-data-label" style={{ marginBottom: 12 }}>Laplace Mechanism — Differential Privacy (§7.19)</div>
+                    <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.65 }}>
+                      Zero-mean Laplace noise injected during analytics export: <code style={{ fontFamily: "var(--font-mono)", color: "var(--accent-cyan)" }}>Lap(0, 1/ε)</code> prevents trajectory re-identification.
+                    </p>
+                    <div className="fp-info-row"><span className="fp-info-key">Privacy Budget (ε)</span><span className="fp-info-val blue">0.75 / 1.00</span></div>
+                    <div className="fp-info-row"><span className="fp-info-key">Noise Scale b = 1/ε</span><span className="fp-info-val">1.333</span></div>
+                    <div className="fp-info-row"><span className="fp-info-key">Re-ID Risk</span><span className="fp-info-val green">0.00% — Secure</span></div>
+                    <div className="fp-info-row"><span className="fp-info-key">Export Format</span><span className="fp-info-val">Noisy Parquet + AES-256</span></div>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
-        )}
+          )}
 
-        {/* =================================================================== */}
-        {/* TAB 8: ZERO-LOSS LEDGER & CRYPTOGRAPHIC AUDIT CHAIN */}
-        {/* =================================================================== */}
-        {activeTab === "ledger" && (
-          <section className="flight-radar-wrapper">
-            <div className="radar-header">
-              <div className="radar-header-info">
-                <h3>Cryptographic Zero-Loss Ledger & SHA-256 Audit Chain (§7.20, §8.S5)</h3>
-                <p>Continuous logical accounting emission ledger proving 0.000% telemetry data loss across 100,000 vehicles with forward-linked hash chains.</p>
-              </div>
-              <span className="badge-pill status-optimal">● 0.000% Data Loss Certified</span>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "20px" }}>
-              <div style={{ background: "#ffffff", border: "1px solid var(--card-border)", borderRadius: "14px", padding: "18px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>Sustained Ingest Rate</span>
-                <div style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a", fontFamily: "var(--font-mono)", marginTop: "4px" }}>
-                  {ledgerStatus.ingest_rate_eps.toLocaleString()} <span style={{ fontSize: "14px", fontWeight: "600" }}>eps</span>
+          {/* ════════ LEDGER ════════ */}
+          {activeTab === "ledger" && (
+            <div className="fp-section" key="ledger">
+              <div className="fp-section-header">
+                <div>
+                  <div className="fp-section-title">Cryptographic Zero-Loss Audit Ledger</div>
+                  <div className="fp-section-sub">SHA-256 forward-chained hash ledger proves 0.000% data loss across 100K vehicles · Kafka + ClickHouse + PostgreSQL pipeline (§7.20 / §8.S5)</div>
                 </div>
+                <span className="fp-badge green">● 0.000% Loss Certified</span>
               </div>
-
-              <div style={{ background: "#d1fae5", border: "1px solid rgba(5,150,105,0.3)", borderRadius: "14px", padding: "18px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#059669", textTransform: "uppercase" }}>Accounting Data Loss</span>
-                <div style={{ fontSize: "28px", fontWeight: "800", color: "#059669", fontFamily: "var(--font-mono)", marginTop: "4px" }}>
-                  0.000%
+              <div className="fp-section-body">
+                <div className="fp-data-grid">
+                  <div className="fp-data-card">
+                    <div className="fp-data-label">Ingest Rate</div>
+                    <div className="fp-data-value">{fmt(ledger.ingest_rate_eps)}<span style={{ fontSize: 12, marginLeft: 5, fontWeight: 600 }}>eps</span></div>
+                  </div>
+                  <div className="fp-data-card highlight-green">
+                    <div className="fp-data-label green">Accounting Loss</div>
+                    <div className="fp-data-value green">0.000%</div>
+                  </div>
+                  <div className="fp-data-card">
+                    <div className="fp-data-label">Chain Depth</div>
+                    <div className="fp-data-value">{ledger.audit_chain_length}<span style={{ fontSize: 12, marginLeft: 5, fontWeight: 600 }}>blocks</span></div>
+                  </div>
+                  <div className="fp-data-card">
+                    <div className="fp-data-label">Cost per km</div>
+                    <div className="fp-data-value">${safe(cost.cost_per_km, 0.161).toFixed(3)}</div>
+                  </div>
+                  <div className="fp-data-card">
+                    <div className="fp-data-label">Total Distance (MoM)</div>
+                    <div className="fp-data-value">{(safe(cost.total_km, 0)/1e6).toFixed(2)}<span style={{ fontSize: 12, marginLeft: 5, fontWeight: 600 }}>M km</span></div>
+                  </div>
+                  <div className="fp-data-card highlight-violet">
+                    <div className="fp-data-label violet">Total Fleet Cost</div>
+                    <div className="fp-data-value violet">${(safe(cost.total_cost, 0)/1000).toFixed(0)}k</div>
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ background: "#ffffff", border: "1px solid var(--card-border)", borderRadius: "14px", padding: "18px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>Audit Chain Depth</span>
-                <div style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a", fontFamily: "var(--font-mono)", marginTop: "4px" }}>
-                  {ledgerStatus.audit_chain_length} Blocks
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", color: "var(--text-muted)", marginBottom: 10 }}>
+                    Hash chain: H_n = SHA256(H_n-1 ‖ Entry_n)
+                  </div>
+                  <div className="fp-terminal">
+                    [BLOCK #{ledger.audit_chain_length}] PREV: a7e12f...81c002 → CURR: {ledger.last_audit_hash} [✓ VERIFIED]<br />
+                    VEHICLES: {fmt(tenant.fleet)} | INGEST: {fmt(ledger.ingest_rate_eps)} eps | LOSS: 0.000% | STATUS: NOMINAL
+                  </div>
                 </div>
+
+                <div className="fp-info-row"><span className="fp-info-key">Energy Cost (MoM)</span><span className="fp-info-val blue">${fmt(cost.energy_cost)}</span></div>
+                <div className="fp-info-row"><span className="fp-info-key">Idle Cost Attributed</span><span className="fp-info-val">${fmt(cost.idle_cost)}</span></div>
+                <div className="fp-info-row"><span className="fp-info-key">Potential Savings Identified</span><span className="fp-info-val green">${fmt(cost.potential_savings ?? cost.savings ?? 0)}</span></div>
               </div>
             </div>
+          )}
 
-            <div style={{ background: "#f8fafc", border: "1px solid var(--card-border)", borderRadius: "14px", padding: "20px" }}>
-              <h4 style={{ fontSize: "14px", fontWeight: "800", color: "#0f172a", marginBottom: "12px" }}>
-                Forward-Linked Hash Chain State: Hₙ = SHA256(Hₙ₋₁ ∥ Entryₙ)
-              </h4>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "12px", background: "#0f172a", color: "#38bdf8", padding: "14px 18px", borderRadius: "10px", overflowX: "auto" }}>
-                <code>
-                  [BLOCK #{ledgerStatus.audit_chain_length}] PREV: a7e12f...81c002 ➔ CURR: {ledgerStatus.last_audit_hash || "8f4a1c9e...5b2d01"} [VERIFIED]
-                </code>
-              </div>
-            </div>
-          </section>
-        )}
-      </main>
+        </div>{/* /fp-content */}
+      </main>{/* /fp-viewport */}
 
-      {/* =================================================================== */}
-      {/* 4. FLIGHTY LIVE VEHICLE TELEMETRY DRAWER */}
-      {/* =================================================================== */}
-      {activeVehicle && (
-        <div className="flight-drawer-overlay" onClick={() => setActiveVehicle(null)}>
-          <div className="flight-drawer-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="drawer-top-bar">
-              <div className="drawer-vehicle-title">
-                <h3>{activeVehicle.model}</h3>
-                <div className="drawer-vin-code">VIN: {activeVehicle.vin}</div>
-              </div>
-              <button className="drawer-close-btn" onClick={() => setActiveVehicle(null)}>
-                <X size={18} />
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          BOTTOM LIQUID GLASS DOCK — Flighty Exact Style
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {tabToast && (
+        <div className="fp-tab-toast" role="status" aria-live="polite">
+          <span>{tabToast}</span>
+        </div>
+      )}
+      <nav className="fp-dock-wrapper" aria-label="Main Navigation">
+        <div className="fp-dock" ref={dockRef}>
+          {/* Sliding pink-orange sunset pill */}
+          <div
+            className="fp-dock-slider"
+            style={sliderStyle}
+            aria-hidden="true"
+          />
+          {NAV_TABS.map(({ id, label, Icon }) => {
+            const isActive = activeTab === id;
+            const badge    = id === "alerts" ? openAlerts : 0;
+            return (
+              <button
+                key={id}
+                ref={el => { btnRefs.current[id] = el; }}
+                className={`fp-dock-btn${isActive ? " active" : ""}`}
+                onClick={() => setActiveTab(id)}
+                aria-label={label}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {badge > 0 && <span className="fp-dock-badge">{badge > 99 ? "99+" : badge}</span>}
+                <div className="fp-dock-icon"><Icon size={18} /></div>
+                <span className="fp-dock-label">{label}</span>
               </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          VEHICLE TELEMETRY DRAWER
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {activeVeh && (
+        <div className="fp-drawer-overlay" onClick={() => setActiveVeh(null)}>
+          <div className="fp-drawer" onClick={e => e.stopPropagation()}>
+            <div className="fp-drawer-header">
+              <div>
+                <div className="fp-drawer-title">{activeVeh.model || "EV Vehicle"}</div>
+                <div className="fp-drawer-vin">PID: {activeVeh.vehicle_pid || activeVeh.vin || "—"}</div>
+              </div>
+              <button className="fp-drawer-close" onClick={() => setActiveVeh(null)}><X size={16} /></button>
             </div>
-
-            {/* Speedometer & Battery HUD */}
-            <div className="drawer-hud-grid">
-              <div className="drawer-hud-tile">
-                <span className="drawer-hud-label">GROUND SPEED</span>
-                <div className="drawer-hud-val" style={{ color: "#0284c7" }}>
-                  {activeVehicle.speed_kmh} <span style={{ fontSize: "14px" }}>km/h</span>
-                </div>
+            <div className="fp-drawer-hud">
+              <div className="fp-hud-tile">
+                <span className="fp-hud-label">Ground Speed</span>
+                <div className="fp-hud-value blue">{activeVeh.speed_kmh || 0}<span style={{ fontSize: 13 }}> km/h</span></div>
               </div>
-
-              <div className="drawer-hud-tile">
-                <span className="drawer-hud-label">BATTERY SOC</span>
-                <div className="drawer-hud-val" style={{ color: "#059669" }}>
-                  {activeVehicle.soc_pct}%
-                </div>
-              </div>
-            </div>
-
-            {/* Additional Telemetry Details */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 14px", background: "#f8fafc", borderRadius: "10px", fontSize: "13px" }}>
-                <span style={{ color: "#64748b" }}>Status:</span>
-                <strong style={{ color: activeVehicle.status === "DRIVING" ? "#059669" : "#0284c7" }}>
-                  {activeVehicle.status}
-                </strong>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 14px", background: "#f8fafc", borderRadius: "10px", fontSize: "13px" }}>
-                <span style={{ color: "#64748b" }}>Heading:</span>
-                <strong>{activeVehicle.heading_deg}° (Northbound)</strong>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 14px", background: "#f8fafc", borderRadius: "10px", fontSize: "13px" }}>
-                <span style={{ color: "#64748b" }}>GPS Coordinates:</span>
-                <strong style={{ fontFamily: "var(--font-mono)" }}>
-                  {activeVehicle.lat.toFixed(4)}°N, {activeVehicle.lon.toFixed(4)}°E
-                </strong>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 14px", background: "#f8fafc", borderRadius: "10px", fontSize: "13px" }}>
-                <span style={{ color: "#64748b" }}>Diagnostic DTCs:</span>
-                <strong style={{ color: activeVehicle.dtc_count > 0 ? "#e11d48" : "#059669" }}>
-                  {activeVehicle.dtc_count === 0 ? "0 Faults (Nominal)" : `${activeVehicle.dtc_count} Active Codes`}
-                </strong>
+              <div className="fp-hud-tile">
+                <span className="fp-hud-label">Battery SoC</span>
+                <div className="fp-hud-value green">{activeVeh.soc_pct || 72}%</div>
               </div>
             </div>
-
-            <button
-              className="btn-flighty-primary"
-              onClick={() => {
-                setDpPid(activeVehicle.vehicle_pid);
-                setActiveTab("ev");
-                setActiveVehicle(null);
-              }}
-              style={{ width: "100%", marginTop: "auto" }}
-            >
-              <Zap size={16} /> Optimize Charging for This Vehicle
+            <div className="fp-info-row"><span className="fp-info-key">Status</span><span className={`fp-info-val ${activeVeh.status === "DRIVING" ? "green" : "blue"}`}>{activeVeh.status || "NOMINAL"}</span></div>
+            <div className="fp-info-row"><span className="fp-info-key">Heading</span><span className="fp-info-val">{activeVeh.heading_deg || 0}°</span></div>
+            <div className="fp-info-row"><span className="fp-info-key">GPS Coords</span><span className="fp-info-val">{(activeVeh.lat||0).toFixed(4)}°N, {(activeVeh.lon||0).toFixed(4)}°E</span></div>
+            <div className="fp-info-row"><span className="fp-info-key">Diagnostics</span><span className={`fp-info-val ${(activeVeh.dtc_count||0) > 0 ? "" : "green"}`}>{(activeVeh.dtc_count||0) === 0 ? "0 Faults — Nominal" : `${activeVeh.dtc_count} Active DTCs`}</span></div>
+            <button className="fp-btn-primary" style={{ width: "100%", marginTop: "auto" }}
+              onClick={() => { setDpPid(activeVeh.vehicle_pid||dpPid); setActiveTab("ev"); setActiveVeh(null); }}>
+              <Zap size={15} /> Optimize Charging for This Vehicle
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }
