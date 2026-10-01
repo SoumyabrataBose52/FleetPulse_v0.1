@@ -22,21 +22,18 @@ It processes a **real-time stream of 100,000 connected vehicles** (1 event/s eac
 # 1. Clone and enter the repo
 git clone <repo-url> && cd fleetpulse
 
-# 2. Copy env template
+# 2. Copy env template (pre-configured with core, app, and sim profiles)
 cp .env.example .env
 
-# 3. Start core infrastructure
-make up
+# 3. Start everything in one command (Docker builds Java services & React dashboard automatically)
+docker compose up -d --build
 
-# 4. Start application services (builds all Java + Python images)
-make up-app
+# (Or using the Makefile: make up-sim)
 
-# 5. Start the simulator with 1,000 vehicles
-make up-sim
-
-# 6. View live data
-open http://localhost:8000/docs   # API docs
-open http://localhost:9001        # MinIO console
+# 4. View live dashboard & services
+open http://localhost:3000        # FleetPulse Web Dashboard (Flighty UI)
+open http://localhost:8000/docs   # Query API & OpenAPI docs
+open http://localhost:9001        # MinIO console (fleetpulse/fleetpulse_dev)
 open http://localhost:3001        # Grafana (admin/admin)
 ```
 
@@ -44,6 +41,7 @@ open http://localhost:3001        # Grafana (admin/admin)
 
 | Service | Port | URL |
 |---|---|---|
+| Web Dashboard (React + Nginx) | 3000 | http://localhost:3000 |
 | Gateway (Spring Boot) | 8080 | http://localhost:8080 |
 | Normalizer | 8082 | http://localhost:8082 |
 | Orderer | 8083 | http://localhost:8083 |

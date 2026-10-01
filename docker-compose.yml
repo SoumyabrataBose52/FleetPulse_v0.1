@@ -462,8 +462,6 @@ services:
     networks: [fleetnet]
     ports:
       - "3000:80"
-    volumes:
-      - ./services/web_app/dist:/usr/share/nginx/html:ro
     depends_on:
       - api
 
