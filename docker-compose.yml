@@ -2,9 +2,9 @@
 ## =============================================================================
 ## FleetPulse — Docker Compose
 ## Single Command Startup:
-##   docker compose up -d    → starts datastores, Kafka, microservices, dashboard & simulator
-## Optional Profiles:
-##   obs   → observability stack (Prometheus, Grafana, Loki)
+##   docker compose up -d    → starts all datastores, Kafka, 6 Java microservices,
+##                             FastAPI, Flighty web dashboard, 100K simulator,
+##                             and observability stack (Prometheus & Grafana)
 ## =============================================================================
 
 x-common-env: &common-env
@@ -484,7 +484,6 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.51.2
-    profiles: [obs]
     hostname: prometheus
     container_name: fp-prometheus
     networks: [fleetnet]
@@ -495,7 +494,6 @@ services:
 
   grafana:
     image: grafana/grafana:10.4.2
-    profiles: [obs]
     hostname: grafana
     container_name: fp-grafana
     networks: [fleetnet]
