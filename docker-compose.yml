@@ -231,6 +231,7 @@ services:
 
   # --- Ingestion Gateway (Spring Boot) ---
   gateway:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-gateway:latest
     build:
       context: ./services/gateway
       dockerfile: Dockerfile
@@ -256,6 +257,7 @@ services:
 
   # --- Normalizer (Spring Boot) ---
   normalizer:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-normalizer:latest
     build:
       context: ./services/normalizer
       dockerfile: Dockerfile
@@ -295,6 +297,7 @@ services:
 
   # --- Orderer (Spring Boot) ---
   orderer:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-orderer:latest
     build:
       context: ./services/orderer
       dockerfile: Dockerfile
@@ -323,6 +326,7 @@ services:
 
   # --- Stream Engine - Fast Path (Spring Boot) ---
   stream-engine-fast:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-stream-engine:latest
     build:
       context: ./services/stream-engine
       dockerfile: Dockerfile
@@ -348,6 +352,7 @@ services:
 
   # --- Telemetry Sink (Spring Boot → ClickHouse) ---
   telemetry-sink:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-telemetry-sink:latest
     build:
       context: ./services/telemetry-sink
       dockerfile: Dockerfile
@@ -372,6 +377,7 @@ services:
 
   # --- Insight Sink (Spring Boot → Postgres + Mongo) ---
   insight-sink:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-insight-sink:latest
     build:
       context: ./services/insight-sink
       dockerfile: Dockerfile
@@ -401,6 +407,7 @@ services:
 
   # --- Query API (FastAPI Python) ---
   api:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-api:latest
     build:
       context: .
       dockerfile: services/api/Dockerfile
@@ -433,6 +440,7 @@ services:
 
   # --- Archiver Service (Python + PyArrow Parquet) ---
   archiver:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-archiver:latest
     build:
       context: .
       dockerfile: services/archiver/Dockerfile
@@ -453,6 +461,7 @@ services:
 
   # --- Web UI (Nginx + Leaflet Dashboard) ---
   web:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-web:latest
     build:
       context: .
       dockerfile: services/web/Dockerfile
@@ -469,6 +478,7 @@ services:
   # SIMULATOR — profile: sim
   # ===========================================================================
   simulator:
+    image: ${DOCKER_REGISTRY:-ghcr.io/soumyabratabose52}/fleetpulse-simulator:latest
     build:
       context: .
       dockerfile: services/simulator/Dockerfile

@@ -25,10 +25,10 @@ git clone <repo-url> && cd fleetpulse
 # 2. Copy env template (pre-configured with core, app, and sim profiles)
 cp .env.example .env
 
-# 3. Start everything in one command (Docker builds Java services & React dashboard automatically)
-docker compose up -d --build
+# 3. Start everything in one command (Docker pulls pre-built GHCR images in seconds, no local compiling needed!)
+docker compose up -d
 
-# (Or using the Makefile: make up-sim)
+# (Optional: to rebuild all images locally from source code, use: docker compose up -d --build)
 
 # 4. View live dashboard & services
 open http://localhost:3000        # FleetPulse Web Dashboard (Flighty UI)

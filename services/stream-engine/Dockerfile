@@ -6,11 +6,11 @@ WORKDIR /app
 
 # Cache dependency layer
 COPY pom.xml .
-RUN mvn dependency:go-offline -B || true
+RUN --mount=type=cache,target=/root/.m2 mvn dependency:resolve -B || true
 
 # Compile application JAR
 COPY src ./src
-RUN mvn clean package -DskipTests -B
+RUN --mount=type=cache,target=/root/.m2 mvn clean package -DskipTests -B
 
 # Stage 2: Runtime JRE
 FROM eclipse-temurin:21-jre-jammy
