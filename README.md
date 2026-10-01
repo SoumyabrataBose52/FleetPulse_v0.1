@@ -20,21 +20,16 @@ It processes a **real-time stream of 100,000 connected vehicles** (1 event/s eac
 
 ```bash
 # 1. Clone and enter the repo
-git clone <repo-url> && cd fleetpulse
+git clone https://github.com/SoumyabrataBose52/FleetPulse_v0.1.git && cd FleetPulse_v0.1
 
-# 2. Copy env template (pre-configured with core, app, and sim profiles)
-cp .env.example .env
-
-# 3. Start everything in one command (Docker pulls pre-built GHCR images in seconds, no local compiling needed!)
+# 2. Start everything in ONE command (Pulls pre-built GHCR images & boots cluster + dashboard in seconds!)
 docker compose up -d
 
-# (Optional: to rebuild all images locally from source code, use: docker compose up -d --build)
-
-# 4. View live dashboard & services
+# 3. View live dashboard & services
 open http://localhost:3000        # FleetPulse Web Dashboard (Flighty UI)
 open http://localhost:8000/docs   # Query API & OpenAPI docs
 open http://localhost:9001        # MinIO console (fleetpulse/fleetpulse_dev)
-open http://localhost:3001        # Grafana (admin/admin)
+open http://localhost:3001        # Grafana (admin/admin, optional: docker compose --profile obs up -d)
 ```
 
 **Service ports:**

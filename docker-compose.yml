@@ -1,12 +1,10 @@
 
 ## =============================================================================
 ## FleetPulse — Docker Compose
-## Profiles:
-##   core  → all datastores + broker (start this first)
-##   app   → all backend services
-##   sim   → simulator
-##   obs   → observability (Prometheus, Grafana, Loki)
-##   lite  → reduced memory for laptops (1K vehicles)
+## Single Command Startup:
+##   docker compose up -d    → starts datastores, Kafka, microservices, dashboard & simulator
+## Optional Profiles:
+##   obs   → observability stack (Prometheus, Grafana, Loki)
 ## =============================================================================
 
 x-common-env: &common-env
@@ -42,7 +40,6 @@ services:
   # --- Kafka (KRaft, single broker for local dev) ---
   kafka:
     image: confluentinc/cp-kafka:7.6.1
-    profiles: [core, app, sim]
     hostname: kafka
     container_name: fp-kafka
     networks: [fleetnet]
@@ -74,7 +71,6 @@ services:
   # --- Schema Registry ---
   schema-registry:
     image: confluentinc/cp-schema-registry:7.6.1
-    profiles: [core, app, sim]
     hostname: schema-registry
     container_name: fp-schema-registry
     networks: [fleetnet]
@@ -94,7 +90,6 @@ services:
   # --- PostgreSQL 16 + PostGIS ---
   postgres:
     image: postgis/postgis:16-3.4-alpine
-    profiles: [core, app]
     hostname: postgres
     container_name: fp-postgres
     networks: [fleetnet]
@@ -116,7 +111,6 @@ services:
   # --- ClickHouse ---
   clickhouse:
     image: clickhouse/clickhouse-server:24.3
-    profiles: [core, app]
     hostname: clickhouse
     container_name: fp-clickhouse
     networks: [fleetnet]
@@ -142,7 +136,6 @@ services:
   # --- Redis ---
   redis:
     image: redis:7.2-alpine
-    profiles: [core, app]
     hostname: redis
     container_name: fp-redis
     networks: [fleetnet]
@@ -158,7 +151,6 @@ services:
   # --- MongoDB ---
   mongo:
     image: mongo:7.0
-    profiles: [core, app]
     hostname: mongo
     container_name: fp-mongo
     networks: [fleetnet]
@@ -177,7 +169,6 @@ services:
   # --- MinIO (S3-compatible object store) ---
   minio:
     image: cgr.dev/chainguard/minio:latest
-    profiles: [core, app]
     hostname: minio
     container_name: fp-minio
     networks: [fleetnet]
@@ -198,7 +189,6 @@ services:
   # --- MinIO bucket initializer ---
   minio-init:
     image: cgr.dev/chainguard/minio:latest
-    profiles: [core, app]
     networks: [fleetnet]
     depends_on:
       minio:
@@ -215,7 +205,6 @@ services:
   # --- Kafka topic initializer ---
   kafka-init:
     image: confluentinc/cp-kafka:7.6.1
-    profiles: [core, app, sim]
     networks: [fleetnet]
     depends_on:
       kafka:
@@ -235,7 +224,6 @@ services:
     build:
       context: ./services/gateway
       dockerfile: Dockerfile
-    profiles: [app]
     hostname: gateway
     container_name: fp-gateway
     networks: [fleetnet]
@@ -261,7 +249,6 @@ services:
     build:
       context: ./services/normalizer
       dockerfile: Dockerfile
-    profiles: [app]
     hostname: normalizer
     container_name: fp-normalizer
     networks: [fleetnet]
@@ -301,7 +288,6 @@ services:
     build:
       context: ./services/orderer
       dockerfile: Dockerfile
-    profiles: [app]
     hostname: orderer
     container_name: fp-orderer
     networks: [fleetnet]
@@ -330,7 +316,6 @@ services:
     build:
       context: ./services/stream-engine
       dockerfile: Dockerfile
-    profiles: [app]
     hostname: stream-engine-fast
     container_name: fp-stream-fast
     networks: [fleetnet]
@@ -356,7 +341,6 @@ services:
     build:
       context: ./services/telemetry-sink
       dockerfile: Dockerfile
-    profiles: [app]
     hostname: telemetry-sink
     container_name: fp-telemetry-sink
     networks: [fleetnet]
@@ -381,7 +365,6 @@ services:
     build:
       context: ./services/insight-sink
       dockerfile: Dockerfile
-    profiles: [app]
     hostname: insight-sink
     container_name: fp-insight-sink
     networks: [fleetnet]
@@ -411,7 +394,6 @@ services:
     build:
       context: .
       dockerfile: services/api/Dockerfile
-    profiles: [app]
     hostname: api
     container_name: fp-api
     networks: [fleetnet]
@@ -444,7 +426,6 @@ services:
     build:
       context: .
       dockerfile: services/archiver/Dockerfile
-    profiles: [app]
     hostname: archiver
     container_name: fp-archiver
     networks: [fleetnet]
@@ -465,7 +446,6 @@ services:
     build:
       context: .
       dockerfile: services/web/Dockerfile
-    profiles: [app]
     hostname: web
     container_name: fp-web
     networks: [fleetnet]
@@ -482,7 +462,6 @@ services:
     build:
       context: .
       dockerfile: services/simulator/Dockerfile
-    profiles: [sim]
     hostname: simulator
     container_name: fp-simulator
     networks: [fleetnet]
